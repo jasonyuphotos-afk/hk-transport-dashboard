@@ -46,6 +46,25 @@
             justify-content: center;
         }
         .sort-btn:active { background: #5a5a5c; }
+
+        .search-tab-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            border: 1.5px solid;
+        }
+        .search-tab-btn.active {
+            background: #0a60ff;
+            color: white;
+            border-color: #0a60ff;
+        }
+        .search-tab-btn.inactive {
+            background: #2c2c2e;
+            color: #a1a1aa;
+            border-color: #3f3f46;
+        }
     </style>
 </head>
 <body class="pb-10 relative">
@@ -59,7 +78,7 @@
             <div class="flex justify-between items-center mb-3 border-b border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
+                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,68,58,0.5)]">
                         ⚠️ 警告生效
                     </span>
                 </div>
@@ -192,7 +211,7 @@
             </div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:border-blue-500 focus:outline-none transition-colors">
             </div>
             <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
@@ -209,10 +228,25 @@
                 <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">已選站點排序 (點擊箭頭調整首頁順序)</h4>
                 <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 min-h-[55px]"></div>
             </div>
+
+            <!-- 搜尋標籤頁 -->
             <div class="mb-4 flex-shrink-0 flex gap-2">
-                <input type="text" id="kmb-route-input" placeholder="輸入九巴或小巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
-                <button onclick="searchBusRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
+                <button id="search-kmb-tab" class="search-tab-btn active" onclick="switchSearchTab('kmb')">九巴</button>
+                <button id="search-gmb-tab" class="search-tab-btn inactive" onclick="switchSearchTab('gmb')">綠色小巴</button>
             </div>
+
+            <!-- 九巴搜尋面板 -->
+            <div id="kmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-red-500 focus:outline-none transition-colors">
+                <button onclick="searchBusRoute('kmb')" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
+            </div>
+
+            <!-- 小巴搜尋面板 -->
+            <div id="gmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2 hidden">
+                <input type="text" id="gmb-route-input" placeholder="輸入綠色小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-green-500 focus:outline-none transition-colors">
+                <button onclick="searchBusRoute('gmb')" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
+            </div>
+
             <div id="kmb-search-status" class="text-center text-[#64d2ff] font-bold text-xs mb-2"></div>
             <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
         </div>
@@ -222,6 +256,7 @@
         // ================= 收合控制 (Accordion) =================
         let lrtExpanded = true;
         let kmbExpanded = false;
+        let currentSearchTab = 'kmb'; // 追蹤當前搜尋標籤頁
 
         function updateAccordionUI() {
             const lrtContent = document.getElementById('lrt-content');
@@ -259,11 +294,11 @@
 
         // ================= 輕鐵資料區 =================
         const STATION_GROUPS = {
-            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '兆禧', '250': '屯門泳池', '260': '豐景園' },
+            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '豐景' },
             "屯門市中心": { '265': '兆麟', '270': '安定', '275': '友愛', '280': '市中心', '295': '屯門', '300': '杯渡', '310': '何福堂', '320': '新墟', '330': '景峰' },
-            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興(北)', '200': '大興(南)', '210': '銀圍' },
-            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '390': '坑尾村' },
-            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '天逸', '540': '天恆', '550': '濕地公園', '560': '天秀' },
+            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興' },
+            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '260': '天河', '250': '新達' },
+            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '屏山西' },
             "元朗": { '400': '屏山', '425': '塘坊村', '570': '水邊圍', '580': '豐年路', '590': '康樂路', '600': '大棠路', '610': '元朗' }
         };
 
@@ -321,7 +356,7 @@
                 if (Object.keys(warnData).length > 0) {
                     warnIcon.classList.remove('hidden');
                     let warnings = [];
-                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key].name}</div>`); }
+                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key]}</div>`); }
                     warnModalText.innerHTML = warnings.join('');
                 } else {
                     warnIcon.classList.add('hidden');
@@ -342,7 +377,7 @@
 
         async function fetchTrafficNews() {
             try {
-                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行車線。\n\n另外，較早前因交通意外而封閉的皇珠路(往屯門公路方向)近友愛邨的快線現已解封。現時上址交通繁忙，請駕駛人士保持忍讓。";
+                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行線。";
                 fullTrafficText = mockTrafficData;
                 const previewEl = document.getElementById('traffic-news-preview');
                 const readMoreEl = document.getElementById('traffic-read-more');
@@ -529,6 +564,32 @@
         }
 
         // ================= 九巴/小巴邏輯 =================
+        
+        // 切換搜尋標籤頁
+        function switchSearchTab(tab) {
+            currentSearchTab = tab;
+            const kmbTab = document.getElementById('search-kmb-tab');
+            const gmbTab = document.getElementById('search-gmb-tab');
+            const kmbPanel = document.getElementById('kmb-search-panel');
+            const gmbPanel = document.getElementById('gmb-search-panel');
+
+            if (tab === 'kmb') {
+                kmbTab.classList.add('active');
+                kmbTab.classList.remove('inactive');
+                gmbTab.classList.remove('active');
+                gmbTab.classList.add('inactive');
+                kmbPanel.classList.remove('hidden');
+                gmbPanel.classList.add('hidden');
+            } else {
+                gmbTab.classList.add('active');
+                gmbTab.classList.remove('inactive');
+                kmbTab.classList.remove('active');
+                kmbTab.classList.add('inactive');
+                gmbPanel.classList.remove('hidden');
+                kmbPanel.classList.add('hidden');
+            }
+        }
+
         async function fetchAllKmbStops() {
             if(Object.keys(kmbStopsDict).length > 0) return;
             try {
@@ -559,7 +620,7 @@
                 return;
             }
 
-            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-gray-400 text-xs">載入中...</span></div>`).join('');
 
             kmbSelected.forEach(async (item, i) => {
                 const html = await buildBusCardHtml(item);
@@ -648,58 +709,71 @@
             }
         }
 
-                        async function searchBusRoute() {
-            const routeInput = document.getElementById('kmb-route-input').value.trim().toUpperCase();
-            if(!routeInput) return;
-            
+        // ================= 改進的搜尋邏輯 =================
+        async function searchBusRoute(type) {
             const statusEl = document.getElementById('kmb-search-status');
             const container = document.getElementById('kmb-route-results');
             container.innerHTML = '';
-            
-            let foundKmb = false;
-            let foundGmb = false;
 
-            // 1. 搜尋九巴
-            statusEl.innerText = '正在搜尋九巴...';
-            try {
-                await fetchAllKmbStops(); 
-                await fetchAllKmbRoutes();
-                const matchedRoutes = kmbRoutesList.filter(r => r.route === routeInput);
-                if(matchedRoutes.length > 0) {
-                    foundKmb = true;
-                    await renderKmbSearchResults(matchedRoutes, routeInput, container);
-                }
-            } catch (e) { console.error("KMB Search Error:", e); }
+            if (type === 'kmb') {
+                const routeInput = document.getElementById('kmb-route-input').value.trim().toUpperCase();
+                if(!routeInput) return;
 
-            // 2. 搜尋綠色小巴 (精確搜尋特定路線，無需載入全港)
-            statusEl.innerText = '正在搜尋小巴路線...';
-            const regions = ['NT', 'KLN', 'HKI'];
-            for (const region of regions) {
+                statusEl.innerText = '正在搜尋九巴...';
+                statusEl.className = "text-center text-[#64d2ff] font-bold text-xs mb-2";
+
                 try {
-                    // 直接向 API 要求指定的路線資料，避免全量加載及資料結構錯誤
-                    const mbRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${region}/${routeInput}`);
-                    if (!mbRes.ok) continue;
-                    const mbData = await mbRes.json();
-                    
-                    // 如果該分區有找到指定的路線資料 (API 會回傳陣列)
-                    if (mbData.data && mbData.data.length > 0) {
-                        foundGmb = true;
-                        // 直接將回傳的路線陣列傳給 renderGmbSearchResults
-                        await renderGmbSearchResults(mbData.data, routeInput, container);
+                    await fetchAllKmbStops(); 
+                    await fetchAllKmbRoutes();
+                    const matchedRoutes = kmbRoutesList.filter(r => r.route === routeInput);
+                    if(matchedRoutes.length > 0) {
+                        await renderKmbSearchResults(matchedRoutes, routeInput, container);
+                        statusEl.innerText = '搜尋完成！';
+                        statusEl.className = "text-center text-[#ff453a] font-bold text-xs mb-2";
+                    } else {
+                        statusEl.innerText = `找不到九巴路線 (${routeInput})。請檢查路線編號。`;
+                        statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
                     }
-                } catch(e) { console.error("GMB Search Error:", e); }
-            }
+                } catch (e) { 
+                    console.error("KMB Search Error:", e);
+                    statusEl.innerText = "搜尋九巴時出錯，請稍後重試。";
+                    statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
+                }
+            } else if (type === 'gmb') {
+                const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
+                if(!routeInput) return;
 
-            if(!foundKmb && !foundGmb) {
-                statusEl.innerText = `找不到該路線 (${routeInput})。請嘗試輸入完整編號或檢查網絡。`;
-                statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
-            } else {
-                statusEl.innerText = '搜尋完成！';
-                statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
+                statusEl.innerText = '正在搜尋綠色小巴...';
+                statusEl.className = "text-center text-[#64d2ff] font-bold text-xs mb-2";
+
+                let foundGmb = false;
+                const regions = ['NT', 'KLN', 'HKI'];
+                
+                for (const region of regions) {
+                    try {
+                        // 直接查詢指定的綠小路線
+                        const mbRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${region}/${routeInput}`);
+                        
+                        if (!mbRes.ok) continue;
+                        const mbData = await mbRes.json();
+                        
+                        // 檢查是否有返回陣列
+                        if (mbData.data && mbData.data.length > 0) {
+                            foundGmb = true;
+                            await renderGmbSearchResults(mbData.data, routeInput, container);
+                        }
+                    } catch(e) { console.error(`GMB Search Error (${region}):`, e); }
+                }
+
+                if(!foundGmb) {
+                    statusEl.innerText = `找不到綠色小巴路線 (${routeInput})。請檢查路線編號。`;
+                    statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
+                } else {
+                    statusEl.innerText = '搜尋完成！';
+                    statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
+                }
             }
         }
-
-
 
         async function renderKmbSearchResults(routes, routeCode, container) {
             for (const r of routes) {
@@ -778,14 +852,14 @@
 
                         const uniqueId = `gmb-stops-${routeId}-${seq}`;
                         
-                        // 先畫出骨架，告訴用家正在載入，避免覺得壞了
+                        // 先畫出骨架
                         let baseHtml = `
                         <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-[#34c759]/40 relative">
                             <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
                                 <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                             </h4>
                             <div class="space-y-2" id="${uniqueId}">
-                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[9px]">為免伺服器封鎖，請耐心等候幾秒鐘</span></div>
+                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[10px]">請耐心等候</span></div>
                             </div>
                         </div>
                         `;
@@ -794,7 +868,7 @@
                         const stopsContainer = document.getElementById(uniqueId);
                         let stopsHtml = '';
 
-                        // 逐個排隊拿小巴站名，防止並發引發 429 Error
+                        // 逐個排隊拿小巴站名
                         for (const stopObj of stopData.data) {
                             let stopName = gmbStopsDict[stopObj.stop_id];
                             if (!stopName) {
@@ -835,10 +909,12 @@
                             `;
                         }
                         
-                        // 載入完成，將站點塞進去取代 Loading 動畫
+                        // 載入完成
                         if(stopsContainer) stopsContainer.innerHTML = stopsHtml;
 
-                    } catch(e) {}
+                    } catch(e) {
+                        console.error("GMB route-stop error:", e);
+                    }
                 }
             }
         }
@@ -893,8 +969,10 @@
         function openKmbSettings() {
             renderKmbSortList();
             document.getElementById('kmb-route-input').value = '';
+            document.getElementById('gmb-route-input').value = '';
             document.getElementById('kmb-route-results').innerHTML = '';
             document.getElementById('kmb-search-status').innerText = '';
+            switchSearchTab('kmb'); // 預設顯示九巴搜尋
             document.getElementById('kmb-settings-modal').classList.remove('hidden');
             document.getElementById('kmb-settings-modal').classList.add('flex');
         }
