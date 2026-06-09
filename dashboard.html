@@ -44,7 +44,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
+            }
         .sort-btn:active { background: #5a5a5c; }
     </style>
 </head>
@@ -101,7 +101,7 @@
             <div class="bg-[#1c1c1e] rounded-xl p-3 border border-gray-800 cursor-pointer active:bg-[#2c2c2e] transition-colors" onclick="openTrafficModal()">
                 <p id="traffic-news-preview" class="text-xs text-gray-300 leading-relaxed line-clamp-3">載入中...</p>
                 <div class="text-right mt-1.5" id="traffic-read-more" style="display: none;">
-                    <span class="text-[10px] text-blue-400 font-medium">點擊閱讀全文 👉</span>
+                    <span class="text-[10px] text-blue-400 font-medium" id="traffic-read-more-text">點擊閱讀全文 👉</span>
                 </div>
             </div>
         </div>
@@ -344,40 +344,63 @@
             } catch (err) { console.error("天氣 API 錯誤", err); }
         }
 
-        // 修改：使用真實運輸署 XML 特別交通消息
+        // 完全整合政府資料一線通最新 XML 特別交通消息來源
         async function fetchTrafficNews() {
             try {
-                const res = await fetch('https://resource.data.one.gov.hk/td/special-traffic-news/tc_stn.xml');
+                // 加上隨機時間戳，完美解決 60 秒定時刷新時的瀏覽器緩存問題
+                const res = await fetch('https://resource.data.one.gov.hk/td/en/specialtrafficnews.xml?t=' + new Date().getTime());
                 const text = await res.text();
                 
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(text, 'text/xml');
-                const messages = xml.getElementsByTagName('Message');
+                const messages = xml.getElementsByTagName('message'); // 注意 XML 標籤為小寫 message
                 
                 let fullText = "";
+                let previewText = "";
+                
                 if (messages.length > 0) {
+                    // 擷取第一條最新消息作為首頁 Dashboard 的看板內容
+                    const firstChinText = messages[0].getElementsByTagName("ChinText")[0]?.textContent || "";
+                    previewText = firstChinText.trim();
+                    
+                    // 迴圈重組所有消息，供用戶一 tap 彈出 popup 時完整觀看
                     for (let i = 0; i < messages.length; i++) {
-                        const msgTc = messages[i].getAttribute('tc') || messages[i].textContent;
-                        if (msgTc && msgTc.trim()) {
-                            fullText += `・${msgTc.trim()}\n\n`;
+                        const chinText = messages[i].getElementsByTagName("ChinText")[0]?.textContent || "";
+                        const refDate = messages[i].getElementsByTagName("ReferenceDate")[0]?.textContent || "";
+                        if (chinText.trim()) {
+                            fullText += `【發佈時間: ${refDate.trim()}】\n${chinText.trim()}\n\n`;
                         }
                     }
                 }
                 
-                if (!fullText) fullText = "✅ 目前交通大致正常，沒有特別消息。";
+                if (!fullText) {
+                    fullText = "✅ 目前交通大致正常，沒有特別消息。";
+                    previewText = "✅ 目前交通大致正常，沒有特別消息。";
+                }
                 
                 fullTrafficText = fullText.trim();
                 const previewEl = document.getElementById('traffic-news-preview');
                 const readMoreEl = document.getElementById('traffic-read-more');
+                const readMoreTextEl = document.getElementById('traffic-read-more-text');
                 
-                previewEl.innerText = fullTrafficText;
+                previewEl.innerText = previewText;
                 document.getElementById('traffic-modal-text').innerText = fullTrafficText;
                 
-                if (fullTrafficText.length > 50 || fullTrafficText.includes('\n')) readMoreEl.style.display = 'block';
-                else readMoreEl.style.display = 'none';
+                // 動態判斷：若有多條訊息或訊息過長，顯示提示字眼，並加入總條數統計
+                if (messages.length > 1 || previewText.length > 50) {
+                    readMoreEl.style.display = 'block';
+                    if (readMoreTextEl && messages.length > 1) {
+                        readMoreTextEl.innerText = `點擊查看全部消息 (${messages.length} 條) 👉`;
+                    } else if (readMoreTextEl) {
+                        readMoreTextEl.innerText = '點擊閱讀全文 👉';
+                    }
+                } else {
+                    readMoreEl.style.display = 'none';
+                }
             } catch (err) {
                 console.error("交通消息讀取錯誤", err);
                 document.getElementById('traffic-news-preview').innerText = "暫時無法獲取交通消息。";
+                document.getElementById('traffic-read-more').style.display = 'none';
             }
         }
 
@@ -513,6 +536,7 @@
             renderSortList();
         }
 
+        // 輕鐵設定開啟
         function openSettings() {
             const modal = document.getElementById('settings-modal');
             const listContainer = document.getElementById('station-list-settings');
@@ -596,14 +620,12 @@
             });
         }
 
-        // 修改：使用正確的 hk_td ETA API 獲取小巴數據
         async function buildBusCardHtml(item) {
             try {
                 let etas = [];
                 const isGmb = item.company === 'gmb';
                 
                 if (isGmb) {
-                    // 完全沿用 hk_td 的 ETA 抓取方式
                     const res = await fetch(`https://data.etagmb.gov.hk/eta/stop/${item.stopId}`);
                     if (res.ok) {
                         const json = await res.json();
@@ -612,7 +634,7 @@
                             if (targetRoute && targetRoute.eta) {
                                 etas = targetRoute.eta
                                     .filter(d => d.timestamp !== null)
-                                    .map(d => ({ eta: d.timestamp })) // 轉化格式配合後方代碼
+                                    .map(d => ({ eta: d.timestamp }))
                                     .sort((a, b) => new Date(a.eta) - new Date(b.eta));
                             }
                         }
@@ -647,7 +669,7 @@
                     const etaTime = new Date(etaObj.eta);
                     const now = new Date();
                     const diffMs = etaTime - now;
-                    let diffMins = Math.max(0, Math.floor(diffMs / 60000)); // 避免出現負數
+                    let diffMins = Math.max(0, Math.floor(diffMs / 60000));
                     let timeStr = `${String(etaTime.getHours()).padStart(2,'0')}:${String(etaTime.getMinutes()).padStart(2,'0')}`;
                     
                     let minHtml = '';
@@ -684,7 +706,6 @@
             }
         }
 
-        // 修改：加入 Tab 切換功能
         function switchBusTab(type) {
             const tabKmb = document.getElementById('tab-kmb');
             const tabGmb = document.getElementById('tab-gmb');
@@ -709,7 +730,6 @@
             }
         }
 
-        // 修改：分拆出來的九巴搜尋功能
         async function searchKmbRoute() {
             const routeInput = document.getElementById('kmb-route-input').value.trim().toUpperCase();
             if(!routeInput) return;
@@ -736,7 +756,6 @@
             }
         }
 
-        // 修改：分拆出來的小巴搜尋功能 (採用 hk_td 的 API endpoint)
         async function searchGmbRoute() {
             const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
             if(!routeInput) return;
@@ -748,7 +767,7 @@
             statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
 
             let foundGmb = false;
-            const regions = ['NT', 'KLN', 'HKI']; // 小巴需要分區搜尋
+            const regions = ['NT', 'KLN', 'HKI'];
             
             for (const region of regions) {
                 try {
@@ -820,7 +839,6 @@
             }
         }
 
-        // 修改：使用正確的小巴站點 API (data.etagmb.gov.hk)
         async function renderGmbSearchResults(routes, routeCode, container) {
             for (const r of routes) {
                 const routeId = r.route_id;
@@ -844,7 +862,6 @@
                         const stopRes = await fetch(`https://data.etagmb.gov.hk/route-stop/${routeId}/${seq}`);
                         const stopData = await stopRes.json();
                         
-                        // 兼容新舊寫法防錯
                         let stops = stopData.data.route_stops || stopData.data; 
                         if (!stops || stops.length === 0) continue;
 
@@ -869,7 +886,6 @@
                             let stopName = gmbStopsDict[stopObj.stop_id];
                             
                             if (!stopName) {
-                                // 嘗試從不同的 JSON 結構獲取站名
                                 if (stopObj.name_tc) {
                                     stopName = stopObj.name_tc;
                                     gmbStopsDict[stopObj.stop_id] = stopName;
@@ -975,7 +991,7 @@
             document.getElementById('gmb-route-input').value = '';
             document.getElementById('kmb-route-results').innerHTML = '';
             document.getElementById('kmb-search-status').innerText = '';
-            switchBusTab('kmb'); // 預設打開九巴 Tab
+            switchBusTab('kmb');
             document.getElementById('kmb-settings-modal').classList.remove('hidden');
             document.getElementById('kmb-settings-modal').classList.add('flex');
         }
@@ -997,7 +1013,7 @@
             fetchKMBData();
             
             setInterval(fetchWeather, 3 * 60 * 1000);
-            setInterval(fetchTrafficNews, 5 * 60 * 1000);
+            setInterval(fetchTrafficNews, 60 * 1000); // 配合需求更改為每 60 秒定時重新抓取數據
             setInterval(fetchLRTData, 30 * 1000);
             setInterval(fetchKMBData, 30 * 1000);
         };
