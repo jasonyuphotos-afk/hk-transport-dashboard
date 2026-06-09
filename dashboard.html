@@ -78,7 +78,7 @@
             <div class="flex justify-between items-center mb-3 border-b border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255[...]
+                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,68,58,0.5)]">
                         ⚠️ 警告生效
                     </span>
                 </div>
@@ -177,7 +177,7 @@
     </div>
 
     <!-- 彈出視窗：天氣警告 -->
-    <div id="warning-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()[...]">
+    <div id="warning-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()">
         <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff453a] text-lg font-bold flex items-center gap-2">⚠️ 特別天氣警告</h3>
@@ -188,7 +188,7 @@
     </div>
 
     <!-- 彈出視窗：特別交通消息 -->
-    <div id="traffic-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()[...]">
+    <div id="traffic-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
         <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff9f0a] text-lg font-bold flex items-center gap-2">🚦 特別交通消息</h3>
@@ -211,7 +211,7 @@
             </div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border [...]">
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:border-blue-500 focus:outline-none transition-colors">
             </div>
             <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
@@ -237,13 +237,13 @@
 
             <!-- 九巴搜尋面板 -->
             <div id="kmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2">
-                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:bord[...]">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-red-500 focus:outline-none transition-colors">
                 <button onclick="searchBusRoute('kmb')" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
 
             <!-- 小巴搜尋面板 -->
             <div id="gmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2 hidden">
-                <input type="text" id="gmb-route-input" placeholder="輸入綠色小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:bor[...]">
+                <input type="text" id="gmb-route-input" placeholder="輸入綠色小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-green-500 focus:outline-none transition-colors">
                 <button onclick="searchBusRoute('gmb')" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
 
@@ -294,11 +294,11 @@
 
         // ================= 輕鐵資料區 =================
         const STATION_GROUPS = {
-            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '��[...]'},
+            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '豐景' },
             "屯門市中心": { '265': '兆麟', '270': '安定', '275': '友愛', '280': '市中心', '295': '屯門', '300': '杯渡', '310': '何福堂', '320': '新墟', '330': '景峰' },
-            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大[...]'},
-            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋',[...]},
-            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', [...]},
+            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興' },
+            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '260': '天河', '250': '新達' },
+            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '屏山西' },
             "元朗": { '400': '屏山', '425': '塘坊村', '570': '水邊圍', '580': '豐年路', '590': '康樂路', '600': '大棠路', '610': '元朗' }
         };
 
@@ -320,7 +320,6 @@
         let gmbStopsDict = {}; // 快取小巴站名
         let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
         let kmbRoutesList = []; // 快取九巴全港路線
-        let gmbRoutesList = []; // 快取綠色小巴全港路線
 
         // ================= 通用及天氣 =================
         function updateClock() {
@@ -357,7 +356,7 @@
                 if (Object.keys(warnData).length > 0) {
                     warnIcon.classList.remove('hidden');
                     let warnings = [];
-                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[k[...]
+                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key]}</div>`); }
                     warnModalText.innerHTML = warnings.join('');
                 } else {
                     warnIcon.classList.add('hidden');
@@ -378,7 +377,7 @@
 
         async function fetchTrafficNews() {
             try {
-                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行�[...]";
+                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行線。";
                 fullTrafficText = mockTrafficData;
                 const previewEl = document.getElementById('traffic-news-preview');
                 const readMoreEl = document.getElementById('traffic-read-more');
@@ -389,10 +388,10 @@
             } catch (err) {}
         }
 
-        function openWarningModal() { document.getElementById('warning-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('warning-modal').classList.remove('opacity-0'); },[...]
-        function closeWarningModal() { document.getElementById('warning-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('warning-modal').classList.add('hidden'); }, 300)[...]
-        function openTrafficModal() { if(fullTrafficText) { document.getElementById('traffic-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('traffic-modal').classList.r[...]
-        function closeTrafficModal() { document.getElementById('traffic-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('traffic-modal').classList.add('hidden'); }, 300)[...]
+        function openWarningModal() { document.getElementById('warning-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('warning-modal').classList.remove('opacity-0'); }, 10); }
+        function closeWarningModal() { document.getElementById('warning-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('warning-modal').classList.add('hidden'); }, 300); }
+        function openTrafficModal() { if(fullTrafficText) { document.getElementById('traffic-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('traffic-modal').classList.remove('opacity-0'); }, 10); } }
+        function closeTrafficModal() { document.getElementById('traffic-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('traffic-modal').classList.add('hidden'); }, 300); }
 
         // ================= 輕鐵邏輯 =================
         function renderLrtTags() {
@@ -499,7 +498,7 @@
                         <span class="text-sm font-bold text-gray-100">${STATION_DICT[id] || id}</span>
                         <div class="flex flex-col gap-0.5">
                             <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼<[...]
+                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
                         </div>
                     </div>
                 `;
@@ -532,7 +531,7 @@
                 for (const [id, name] of Object.entries(stations)) {
                     const isChecked = selectedStations.includes(id) ? 'checked' : '';
                     html += `
-                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-nam[...]">
+                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-name="${name}" data-id="${id}">
                             <span class="text-sm font-bold text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
                             <input type="checkbox" value="${id}" class="w-4 h-4 accent-blue-600 rounded flex-shrink-0" onchange="toggleStationSelection('${id}', this.checked)" ${isChecked}>
                         </label>`;
@@ -611,20 +610,6 @@
             } catch (e) {}
         }
 
-        // 新增：抓取所有綠色小巴路線並快取
-        async function fetchGmbRoutes() {
-            if (gmbRoutesList.length > 0) return;
-            try {
-                // 這個 endpoint 回傳所有地區的綠色小巴路線
-                const res = await fetch('https://data.etabus.gov.hk/v1/transport/minibus/routes');
-                if (!res.ok) return;
-                const data = await res.json();
-                if (data.data) gmbRoutesList = data.data;
-            } catch (e) {
-                console.error('fetchGmbRoutes error:', e);
-            }
-        }
-
         async function fetchKMBData() {
             const container = document.getElementById('kmb-container');
             const now = new Date();
@@ -635,7 +620,7 @@
                 return;
             }
 
-            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="t[...]`);
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-gray-400 text-xs">載入中...</span></div>`).join('');
 
             kmbSelected.forEach(async (item, i) => {
                 const html = await buildBusCardHtml(item);
@@ -755,54 +740,37 @@
                     statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
                 }
             } else if (type === 'gmb') {
-                const routeInputRaw = document.getElementById('gmb-route-input').value.trim();
-                if(!routeInputRaw) return;
-                const routeInput = routeInputRaw.toUpperCase().replace(/\s+/g, '');
+                const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
+                if(!routeInput) return;
 
                 statusEl.innerText = '正在搜尋綠色小巴...';
                 statusEl.className = "text-center text-[#64d2ff] font-bold text-xs mb-2";
 
                 let foundGmb = false;
-                try {
-                    await fetchGmbRoutes(); // 取得全域綠小路線清單
-
-                    const normalize = (s) => (s || '').toString().toUpperCase().replace(/\s+/g, '');
-
-                    const matchedRoutes = gmbRoutesList.filter(r => {
-                        // 支援多欄位比對：route_code, route, route_id
-                        return normalize(r.route_code) === routeInput
-                            || normalize(r.route) === routeInput
-                            || normalize(r.route_id) === routeInput
-                            || normalize(r.route_no) === routeInput;
-                    });
-
-                    if (matchedRoutes.length > 0) {
-                        foundGmb = true;
-                        await renderGmbSearchResults(matchedRoutes, routeInputRaw, container);
-                        statusEl.innerText = '搜尋完成！';
-                        statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
-                    } else {
-                        // 若直接 match 失敗，嘗試用包含（contains）模糊配對
-                        const fuzzy = gmbRoutesList.filter(r => {
-                            const cand = (r.route_code || r.route || r.route_id || '').toString().toUpperCase();
-                            return cand.includes(routeInput) || cand.replace(/\s+/g,'').includes(routeInput);
-                        });
-                        if (fuzzy.length > 0) {
+                const regions = ['NT', 'KLN', 'HKI'];
+                
+                for (const region of regions) {
+                    try {
+                        // 直接查詢指定的綠小路線
+                        const mbRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${region}/${routeInput}`);
+                        
+                        if (!mbRes.ok) continue;
+                        const mbData = await mbRes.json();
+                        
+                        // 檢查是否有返回陣列
+                        if (mbData.data && mbData.data.length > 0) {
                             foundGmb = true;
-                            await renderGmbSearchResults(fuzzy, routeInputRaw, container);
-                            statusEl.innerText = '搜尋完成（模糊匹配）！';
-                            statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
+                            await renderGmbSearchResults(mbData.data, routeInput, container);
                         }
-                    }
-                } catch (e) {
-                    console.error("GMB Search Error:", e);
-                    statusEl.innerText = "搜尋綠色小巴時出錯，請稍後重試。";
-                    statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
+                    } catch(e) { console.error(`GMB Search Error (${region}):`, e); }
                 }
 
-                if (!foundGmb) {
-                    statusEl.innerText = `找不到綠色小巴路線 (${routeInputRaw})。請檢查路線編號。`;
+                if(!foundGmb) {
+                    statusEl.innerText = `找不到綠色小巴路線 (${routeInput})。請檢查路線編號。`;
                     statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
+                } else {
+                    statusEl.innerText = '搜尋完成！';
+                    statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
                 }
             }
         }
@@ -821,7 +789,7 @@
                 let html = `
                 <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-red-500/30">
                     <h4 class="text-[#ff453a] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
-                        <span class="bg-[#ff453a] text-white px-1.5 py-0.5 rounded text-[10px]">九巴</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</spa[...]
+                        <span class="bg-[#ff453a] text-white px-1.5 py-0.5 rounded text-[10px]">九巴</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                     </h4>
                     <div class="space-y-2">
                 `;
@@ -888,10 +856,10 @@
                         let baseHtml = `
                         <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-[#34c759]/40 relative">
                             <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
-                                <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開�[...]
+                                <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                             </h4>
                             <div class="space-y-2" id="${uniqueId}">
-                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[[...]
+                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[10px]">請耐心等候</span></div>
                             </div>
                         </div>
                         `;
@@ -982,7 +950,7 @@
                         </div>
                         <div class="flex flex-col gap-0.5 ml-1">
                             <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</b[...]
+                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
                         </div>
                     </div>
                 `;
@@ -1021,9 +989,15 @@
             updateAccordionUI(); 
             fetchWeather();
             fetchTrafficNews(); 
-            // 原本還有其他初始化呼叫（省略）
-        }
+            renderLrtTags();
+            fetchLRTData();
+            fetchKMBData();
+            
+            setInterval(fetchWeather, 3 * 60 * 1000);
+            setInterval(fetchTrafficNews, 5 * 60 * 1000);
+            setInterval(fetchLRTData, 30 * 1000);
+            setInterval(fetchKMBData, 30 * 1000);
+        };
     </script>
-
 </body>
 </html>
