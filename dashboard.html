@@ -78,7 +78,7 @@
             <div class="flex justify-between items-center mb-3 border-b border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,68,58,0.5)]">
+                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
                         ⚠️ 警告生效
                     </span>
                 </div>
@@ -211,7 +211,7 @@
             </div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:border-blue-500 focus:outline-none transition-colors">
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:border-blue-500 outline-none">
             </div>
             <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
@@ -237,13 +237,13 @@
 
             <!-- 九巴搜尋面板 -->
             <div id="kmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2">
-                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-red-500 focus:outline-none transition-colors">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-blue-500 outline-none">
                 <button onclick="searchBusRoute('kmb')" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
 
             <!-- 小巴搜尋面板 -->
             <div id="gmb-search-panel" class="mb-4 flex-shrink-0 flex gap-2 hidden">
-                <input type="text" id="gmb-route-input" placeholder="輸入綠色小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-green-500 focus:outline-none transition-colors">
+                <input type="text" id="gmb-route-input" placeholder="輸入綠色小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-green-500 outline-none">
                 <button onclick="searchBusRoute('gmb')" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
 
@@ -294,11 +294,11 @@
 
         // ================= 輕鐵資料區 =================
         const STATION_GROUPS = {
-            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '豐景' },
+            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '新生'},
             "屯門市中心": { '265': '兆麟', '270': '安定', '275': '友愛', '280': '市中心', '295': '屯門', '300': '杯渡', '310': '何福堂', '320': '新墟', '330': '景峰' },
-            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興' },
-            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '260': '天河', '250': '新達' },
-            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '屏山西' },
+            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興'},
+            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '390': '美樂中華'},
+            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '天秀'},
             "元朗": { '400': '屏山', '425': '塘坊村', '570': '水邊圍', '580': '豐年路', '590': '康樂路', '600': '大棠路', '610': '元朗' }
         };
 
@@ -377,7 +377,7 @@
 
         async function fetchTrafficNews() {
             try {
-                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行線。";
+                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行車線。";
                 fullTrafficText = mockTrafficData;
                 const previewEl = document.getElementById('traffic-news-preview');
                 const readMoreEl = document.getElementById('traffic-read-more');
@@ -531,7 +531,7 @@
                 for (const [id, name] of Object.entries(stations)) {
                     const isChecked = selectedStations.includes(id) ? 'checked' : '';
                     html += `
-                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-name="${name}" data-id="${id}">
+                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-name="${name.toLowerCase()}" data-id="${id}">
                             <span class="text-sm font-bold text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
                             <input type="checkbox" value="${id}" class="w-4 h-4 accent-blue-600 rounded flex-shrink-0" onchange="toggleStationSelection('${id}', this.checked)" ${isChecked}>
                         </label>`;
@@ -620,7 +620,7 @@
                 return;
             }
 
-            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-gray-400 text-xs">載入中...</span></div>`).join('');
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-xs text-gray-400">載入中...</span></div>`).join('');
 
             kmbSelected.forEach(async (item, i) => {
                 const html = await buildBusCardHtml(item);
@@ -751,18 +751,27 @@
                 
                 for (const region of regions) {
                     try {
-                        // 直接查詢指定的綠小路線
-                        const mbRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${region}/${routeInput}`);
+                        // 從該地區獲取所有綠小路線
+                        const routesRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/routes/${region}`);
+                        if (!routesRes.ok) continue;
                         
-                        if (!mbRes.ok) continue;
-                        const mbData = await mbRes.json();
+                        const routesData = await routesRes.json();
                         
-                        // 檢查是否有返回陣列
-                        if (mbData.data && mbData.data.length > 0) {
-                            foundGmb = true;
-                            await renderGmbSearchResults(mbData.data, routeInput, container);
+                        // 過濾匹配的路線
+                        if (routesData.data) {
+                            const matchedRoutes = routesData.data.filter(r => 
+                                r.route_code?.toUpperCase() === routeInput || 
+                                r.route?.toUpperCase() === routeInput
+                            );
+                            
+                            if (matchedRoutes.length > 0) {
+                                foundGmb = true;
+                                await renderGmbSearchResults(matchedRoutes, routeInput, container);
+                            }
                         }
-                    } catch(e) { console.error(`GMB Search Error (${region}):`, e); }
+                    } catch(e) { 
+                        console.error(`GMB Search Error (${region}):`, e); 
+                    }
                 }
 
                 if(!foundGmb) {
@@ -859,7 +868,7 @@
                                 <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                             </h4>
                             <div class="space-y-2" id="${uniqueId}">
-                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[10px]">請耐心等候</span></div>
+                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[10px]">這可能需要幾秒鐘</span></div>
                             </div>
                         </div>
                         `;
