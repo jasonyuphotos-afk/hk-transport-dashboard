@@ -5,22 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>交通實時看板</title>
+    <title>Hong Kong Transport Dashboard v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+        // By Jason Yu 9 Jun 2026
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #000000;
-            color: #ffffff;
             -webkit-font-smoothing: antialiased;
         }
         ::-webkit-scrollbar { display: none; }
         .scroll-area::-webkit-scrollbar { display: block; width: 3px; }
         .scroll-area::-webkit-scrollbar-track { background: transparent; }
-        .scroll-area::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.3); border-radius: 10px; }
+        .dark .scroll-area::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
 
         .glass-panel {
-            background: rgba(30, 30, 30, 0.8);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
@@ -31,198 +40,230 @@
             overflow: hidden;
         }
         .collapsible-content.collapsed { max-height: 0; opacity: 0; }
+        
         .tag-active { background-color: #0a60ff; color: white; border-color: #0a60ff;}
-        .tag-inactive { background-color: #1c1c1e; color: #a1a1aa; border-color: #3f3f46;}
+        .tag-inactive { background-color: #f3f4f6; color: #4b5563; border-color: #e5e7eb;}
+        .dark .tag-inactive { background-color: #1c1c1e; color: #a1a1aa; border-color: #3f3f46;}
+        
         .modal-backdrop { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
         
         .sort-btn {
             font-size: 8px;
             padding: 2px 4px;
-            background: #3a3a3c;
+            background: #e5e7eb;
             border-radius: 4px;
             margin: 1px 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            }
-        .sort-btn:active { background: #5a5a5c; }
+        }
+        .dark .sort-btn { background: #3a3a3c; }
+        .sort-btn:active { background: #d1d5db; }
+        .dark .sort-btn:active { background: #5a5a5c; }
     </style>
 </head>
-<body class="pb-10 relative">
+<body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
+
+    <div class="absolute top-3 right-4 z-10">
+        <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1.5 rounded-full shadow-sm text-lg w-9 h-9 flex items-center justify-center transition-colors">
+            <span id="theme-icon"></span>
+        </button>
+    </div>
 
     <div class="h-12 w-full"></div>
 
     <div class="max-w-[430px] mx-auto px-4 space-y-4">
 
-        <div class="bg-gradient-to-b from-[#1c2a3d] to-[#121a2f] rounded-2xl p-4 border border-gray-700 shadow-lg relative">
-            <div class="flex justify-between items-center mb-3 border-b border-gray-700/60 pb-2">
-                <div class="text-xs text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
-                <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
+        <div class="bg-gradient-to-b from-blue-50 to-white dark:from-[#1c2a3d] dark:to-[#121a2f] rounded-2xl p-4 border border-blue-100 dark:border-gray-700 shadow-lg relative transition-colors duration-300">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700/60 pb-2">
+                <div class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
+                <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform mr-10" onclick="openWarningModal()">
+                    <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
                         ⚠️ 警告生效
                     </span>
                 </div>
             </div>
             
             <div class="flex items-stretch gap-4">
-                <div class="flex-shrink-0 flex flex-col items-center w-[90px] border-r border-gray-700 pr-2">
-                    <div class="text-sm text-gray-300 font-medium" id="weather-location">屯門</div>
+                <div class="flex-shrink-0 flex flex-col items-center w-[90px] border-r border-gray-200 dark:border-gray-700 pr-2">
+                    <div class="text-sm text-gray-800 dark:text-gray-300 font-medium" id="weather-location">屯門</div>
                     <div class="flex items-start mt-1">
-                        <span class="text-4xl font-bold leading-none tracking-tighter" id="weather-temp">--</span>
-                        <span class="text-lg leading-none mt-1 ml-0.5">°C</span>
+                        <span class="text-4xl font-bold leading-none tracking-tighter text-gray-900 dark:text-white" id="weather-temp">--</span>
+                        <span class="text-lg leading-none mt-1 ml-0.5 text-gray-900 dark:text-white">°C</span>
                     </div>
                     <div class="text-3xl my-2" id="weather-icon">☁️</div>
-                    <div class="text-[10px] text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
+                    <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
                         <div>濕度 --%</div>
                     </div>
                 </div>
                 <div class="flex-1 space-y-3 h-[130px] overflow-y-auto pl-1 pr-2 scroll-area">
                     <div>
-                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">現時天氣</div>
-                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-desc">載入中...</div>
+                        <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">現時天氣</div>
+                        <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-desc">載入中...</div>
                     </div>
                     <div>
-                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">天氣預測</div>
-                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-forecast">載入中...</div>
+                        <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">天氣預測</div>
+                        <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-forecast">載入中...</div>
                     </div>
                     <div>
-                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">九天天氣展望</div>
-                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-outlook">載入中...</div>
+                        <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">九天天氣展望</div>
+                        <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-outlook">載入中...</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="glass-panel rounded-2xl p-3">
+        <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-2 px-1">
-                <h2 class="text-lg font-bold flex items-center gap-2">🚦 <span class="text-[#ff9f0a]">特別交通消息</span></h2>
-                <span class="text-[10px] text-gray-500 bg-gray-800 px-2 py-0.5 rounded cursor-pointer" onclick="fetchTrafficNews()">🔄 更新</span>
+                <h2 class="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">🚦 <span class="text-[#ff9f0a]">特別交通消息</span></h2>
+                <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchTrafficNews(); event.stopPropagation();">
+                    <span id="traffic-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
+                </div>
             </div>
-            <div class="bg-[#1c1c1e] rounded-xl p-3 border border-gray-800 cursor-pointer active:bg-[#2c2c2e] transition-colors" onclick="openTrafficModal()">
-                <p id="traffic-news-preview" class="text-xs text-gray-300 leading-relaxed line-clamp-3">載入中...</p>
+            <div class="bg-gray-50 dark:bg-[#1c1c1e] rounded-xl p-3 border border-gray-200 dark:border-gray-800 cursor-pointer active:bg-gray-100 dark:active:bg-[#2c2c2e] transition-colors" onclick="openTrafficModal()">
+                <p id="traffic-news-preview" class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">載入中...</p>
                 <div class="text-right mt-1.5" id="traffic-read-more" style="display: none;">
-                    <span class="text-[10px] text-blue-400 font-medium" id="traffic-read-more-text">點擊閱讀全文 👉</span>
+                    <span class="text-[10px] text-blue-600 dark:text-blue-400 font-medium" id="traffic-read-more-text">點擊閱讀全文 👉</span>
                 </div>
             </div>
         </div>
 
-        <div class="glass-panel rounded-2xl p-3">
+        <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleLRT()">
-                    <h2 class="text-lg font-bold">輕鐵</h2>
-                    <span id="lrt-toggle-icon" class="text-xs transition-transform duration-300">▼</span>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">輕鐵</h2>
+                    <span id="lrt-toggle-icon" class="text-xs transition-transform duration-300 text-gray-500">▼</span>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <button class="bg-gray-800 text-gray-300 border border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openSettings(); event.stopPropagation();">⚙️ 設定</button>
-                    <div class="bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-600" onclick="fetchLRTData(); event.stopPropagation();">
-                        <span id="lrt-refresh-time">--:--</span> 🔄
+                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openSettings(); event.stopPropagation();">⚙️ 設定</button>
+                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchLRTData(); event.stopPropagation();">
+                        <span id="lrt-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
                     </div>
                 </div>
             </div>
             
             <div id="lrt-content" class="collapsible-content">
-                <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 border-b border-gray-700" id="lrt-tags-container"></div>
+                <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 border-b border-gray-200 dark:border-gray-700" id="lrt-tags-container"></div>
                 <div class="flex justify-between items-end mb-2 px-1">
-                    <h3 class="font-bold text-md text-[#64d2ff]" id="lrt-current-station-name">載入中...</h3>
+                    <h3 class="font-bold text-md text-blue-600 dark:text-[#64d2ff]" id="lrt-current-station-name">載入中...</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-3" id="lrt-platforms-container">
-                    <div class="text-xs text-gray-400 col-span-2 text-center py-4">正在連接港鐵伺服器...</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 col-span-2 text-center py-4">正在連接港鐵伺服器...</div>
                 </div>
             </div>
         </div>
 
-        <div class="glass-panel rounded-2xl p-3">
+        <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleKMB()">
-                    <h2 class="text-lg font-bold">九巴 / 小巴</h2>
-                    <span id="kmb-toggle-icon" class="text-xs transition-transform duration-300">▼</span>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">九巴 / 小巴</h2>
+                    <span id="kmb-toggle-icon" class="text-xs transition-transform duration-300 text-gray-500">▼</span>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <button class="bg-gray-800 text-gray-300 border border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openKmbSettings(); event.stopPropagation();">⚙️ 設定</button>
-                    <div class="bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-600" onclick="fetchKMBData(); event.stopPropagation();">
-                        <span id="kmb-refresh-time">--:--</span> 🔄
+                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openKmbSettings(); event.stopPropagation();">⚙️ 設定</button>
+                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchKMBData(); event.stopPropagation();">
+                        <span id="kmb-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
                     </div>
                 </div>
             </div>
             
             <div id="kmb-content" class="collapsible-content collapsed">
                 <div id="kmb-container" class="grid grid-cols-2 gap-2.5">
-                    <div class="text-xs text-gray-400 col-span-2 text-center py-4">請前往設定添加九巴或小巴路線。</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 col-span-2 text-center py-4">請前往設定添加九巴或小巴路線。</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="warning-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()">
-        <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
+    <div id="warning-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff453a] text-lg font-bold flex items-center gap-2">⚠️ 特別天氣警告</h3>
-                <button onclick="closeWarningModal()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+                <button onclick="closeWarningModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <div class="text-sm space-y-3 overflow-y-auto scroll-area pr-2 flex-1" id="warning-modal-text">無特別警告</div>
         </div>
     </div>
 
-    <div id="traffic-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
-        <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
+    <div id="traffic-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff9f0a] text-lg font-bold flex items-center gap-2">🚦 特別交通消息</h3>
-                <button onclick="closeTrafficModal()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+                <button onclick="closeTrafficModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
             </div>
-            <div class="text-sm text-gray-200 whitespace-pre-wrap overflow-y-auto scroll-area pr-2 flex-1 leading-relaxed" id="traffic-modal-text"></div>
+            <div class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap overflow-y-auto scroll-area pr-2 flex-1 leading-relaxed" id="traffic-modal-text"></div>
         </div>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
-        <div class="bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+    <div id="settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
-                <h3 class="text-xl font-bold">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
-                <button onclick="closeSettings()" class="text-blue-500 font-bold px-4 py-1.5 bg-blue-500/20 rounded-full active:bg-blue-500/40">完成</button>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
+                <button onclick="closeSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
             </div>
             <div class="mb-4 flex-shrink-0">
                 <h4 class="text-[#ff9f0a] font-bold text-[11px] mb-2 tracking-wide">已選車站排序 (點擊箭頭調整首頁順序)</h4>
-                <div id="selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 min-h-[55px]"></div>
+                <div id="selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px]"></div>
             </div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
             </div>
             <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
     </div>
 
-    <div id="kmb-settings-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
-        <div class="bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+    <div id="kmb-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
-                <h3 class="text-xl font-bold">設定巴士路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
-                <button onclick="closeKmbSettings()" class="text-blue-500 font-bold px-4 py-1.5 bg-blue-500/20 rounded-full active:bg-blue-500/40">完成</button>
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定巴士路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
+                <button onclick="closeKmbSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
             </div>
             <div class="mb-4 flex-shrink-0">
                 <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">已選站點排序 (點擊箭頭調整首頁順序)</h4>
-                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
+                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
             </div>
             
-            <div class="mb-3 flex-shrink-0 flex border-b border-gray-700">
+            <div class="mb-3 flex-shrink-0 flex border-b border-gray-200 dark:border-gray-700">
                 <button id="tab-kmb" onclick="switchBusTab('kmb')" class="flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors">九巴</button>
-                <button id="tab-gmb" onclick="switchBusTab('gmb')" class="flex-1 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent transition-colors">專線小巴</button>
+                <button id="tab-gmb" onclick="switchBusTab('gmb')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">專線小巴</button>
             </div>
 
             <div id="search-panel-kmb" class="mb-4 flex-shrink-0 flex gap-2">
-                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
                 <button onclick="searchKmbRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
 
             <div id="search-panel-gmb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
-                <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-[#34c759] text-sm uppercase">
+                <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#34c759] text-sm uppercase">
                 <button onclick="searchGmbRoute()" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
 
-            <div id="kmb-search-status" class="text-center text-[#64d2ff] font-bold text-xs mb-2"></div>
+            <div id="kmb-search-status" class="text-center text-blue-600 dark:text-[#64d2ff] font-bold text-xs mb-2"></div>
             <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
         </div>
     </div>
 
     <script>
+        // ================= 顯示與主題控制 =================
+        function updateThemeIcon() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateThemeIcon();
+        }
+
+        window.addEventListener('DOMContentLoaded', updateThemeIcon);
+
         // ================= 收合控制 (Accordion) =================
         let lrtExpanded = true;
         let kmbExpanded = false;
@@ -251,13 +292,13 @@
 
         function toggleLRT() {
             lrtExpanded = !lrtExpanded;
-            if (lrtExpanded) kmbExpanded = false; // 互斥邏輯
+            if (lrtExpanded) kmbExpanded = false; 
             updateAccordionUI();
         }
 
         function toggleKMB() {
             kmbExpanded = !kmbExpanded;
-            if (kmbExpanded) lrtExpanded = false; // 互斥邏輯
+            if (kmbExpanded) lrtExpanded = false; 
             updateAccordionUI();
         }
 
@@ -286,9 +327,9 @@
 
         // ================= 九巴/小巴資料區 =================
         let kmbStopsDict = {}; 
-        let gmbStopsDict = {}; // 快取小巴站名
+        let gmbStopsDict = {}; 
         let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
-        let kmbRoutesList = []; // 快取九巴全港路線
+        let kmbRoutesList = []; 
 
         // ================= 通用及天氣 =================
         function updateClock() {
@@ -344,26 +385,29 @@
             } catch (err) { console.error("天氣 API 錯誤", err); }
         }
 
-        // 完全整合政府資料一線通最新 XML 特別交通消息來源
         async function fetchTrafficNews() {
+            // 更新 Traffic UI 時間
+            const now = new Date();
+            const trafficTimeEl = document.getElementById('traffic-refresh-time');
+            if (trafficTimeEl) {
+                trafficTimeEl.innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            }
+
             try {
-                // 加上隨機時間戳，完美解決 60 秒定時刷新時的瀏覽器緩存問題
                 const res = await fetch('https://resource.data.one.gov.hk/td/en/specialtrafficnews.xml?t=' + new Date().getTime());
                 const text = await res.text();
                 
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(text, 'text/xml');
-                const messages = xml.getElementsByTagName('message'); // 注意 XML 標籤為小寫 message
+                const messages = xml.getElementsByTagName('message'); 
                 
                 let fullText = "";
                 let previewText = "";
                 
                 if (messages.length > 0) {
-                    // 擷取第一條最新消息作為首頁 Dashboard 的看板內容
                     const firstChinText = messages[0].getElementsByTagName("ChinText")[0]?.textContent || "";
                     previewText = firstChinText.trim();
                     
-                    // 迴圈重組所有消息，供用戶一 tap 彈出 popup 時完整觀看
                     for (let i = 0; i < messages.length; i++) {
                         const chinText = messages[i].getElementsByTagName("ChinText")[0]?.textContent || "";
                         const refDate = messages[i].getElementsByTagName("ReferenceDate")[0]?.textContent || "";
@@ -386,7 +430,6 @@
                 previewEl.innerText = previewText;
                 document.getElementById('traffic-modal-text').innerText = fullTrafficText;
                 
-                // 動態判斷：若有多條訊息或訊息過長，顯示提示字眼，並加入總條數統計
                 if (messages.length > 1 || previewText.length > 50) {
                     readMoreEl.style.display = 'block';
                     if (readMoreTextEl && messages.length > 1) {
@@ -444,10 +487,10 @@
 
                 data.platform_list.forEach(platform => {
                     let platformHtml = `
-                    <div class="bg-[#1c1c1e] rounded-xl border border-gray-800 overflow-hidden flex flex-col h-full">
-                        <div class="bg-[#1c2a3d] p-1.5 flex items-center gap-2 border-b border-gray-800">
+                    <div class="bg-white dark:bg-[#1c1c1e] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
+                        <div class="bg-blue-50 dark:bg-[#1c2a3d] p-1.5 flex items-center gap-2 border-b border-gray-200 dark:border-gray-800">
                             <div class="bg-[#0a60ff] text-white w-5 h-5 rounded flex justify-center items-center font-bold text-xs">${platform.platform_id}</div>
-                            <div class="text-xs font-bold text-gray-200">月台</div>
+                            <div class="text-xs font-bold text-gray-800 dark:text-gray-200">月台</div>
                         </div>
                         <div class="p-2 space-y-2 flex-grow">
                     `;
@@ -478,14 +521,14 @@
                                 }
                             }
 
-                            const timeClass = (minsVal <= 2) ? 'text-[#ff453a]' : 'text-[#64d2ff]';
-                            const borderTopClass = index > 0 ? 'border-t border-gray-800 pt-2 mt-2' : '';
+                            const timeClass = (minsVal <= 2) ? 'text-[#ff453a]' : 'text-blue-600 dark:text-[#64d2ff]';
+                            const borderTopClass = index > 0 ? 'border-t border-gray-200 dark:border-gray-800 pt-2 mt-2' : '';
 
                             platformHtml += `
                             <div class="flex justify-between items-end ${borderTopClass}">
                                 <div class="flex-1">
-                                    <div class="text-[#64d2ff] font-bold text-base leading-tight flex items-center flex-wrap gap-y-1"><span class="mr-1">${route.route_no}</span>${trainBadgeHtml}</div>
-                                    <div class="text-[10px] text-gray-400 mt-0.5 truncate pr-1">往 ${route.dest_ch || '未知'}</div>
+                                    <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-base leading-tight flex items-center flex-wrap gap-y-1"><span class="mr-1">${route.route_no}</span>${trainBadgeHtml}</div>
+                                    <div class="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 truncate pr-1">往 ${route.dest_ch || '未知'}</div>
                                 </div>
                                 <div class="text-right flex-shrink-0">
                                     <div class="${timeClass} font-bold text-sm leading-none">${timeText}</div>
@@ -510,11 +553,11 @@
             }
             selectedStations.forEach((id, index) => {
                 list.innerHTML += `
-                    <div class="flex items-center gap-1.5 bg-[#1c2a3d] border border-blue-500/40 px-2 py-1.5 rounded-lg shadow-sm">
-                        <span class="text-sm font-bold text-gray-100">${STATION_DICT[id] || id}</span>
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border border-blue-200 dark:border-blue-500/40 px-2 py-1.5 rounded-lg shadow-sm">
+                        <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${STATION_DICT[id] || id}</span>
                         <div class="flex flex-col gap-0.5">
-                            <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                            <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
+                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
                         </div>
                     </div>
                 `;
@@ -536,7 +579,6 @@
             renderSortList();
         }
 
-        // 輕鐵設定開啟
         function openSettings() {
             const modal = document.getElementById('settings-modal');
             const listContainer = document.getElementById('station-list-settings');
@@ -544,12 +586,12 @@
             document.getElementById('station-search').value = '';
             
             for (const [groupName, stations] of Object.entries(STATION_GROUPS)) {
-                let html = `<div class="group-container"><h4 class="text-[#64d2ff] font-bold text-sm mb-2 pb-1 border-b border-gray-700/60">${groupName}</h4><div class="grid grid-cols-2 gap-2">`;
+                let html = `<div class="group-container"><h4 class="text-blue-600 dark:text-[#64d2ff] font-bold text-sm mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/60">${groupName}</h4><div class="grid grid-cols-2 gap-2">`;
                 for (const [id, name] of Object.entries(stations)) {
                     const isChecked = selectedStations.includes(id) ? 'checked' : '';
                     html += `
-                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-name="${name}" data-id="${id}">
-                            <span class="text-sm font-bold text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
+                        <label class="station-item flex items-center justify-between p-2.5 bg-white dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer shadow-sm" data-name="${name}" data-id="${id}">
+                            <span class="text-sm font-bold text-gray-800 dark:text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
                             <input type="checkbox" value="${id}" class="w-4 h-4 accent-blue-600 rounded flex-shrink-0" onchange="toggleStationSelection('${id}', this.checked)" ${isChecked}>
                         </label>`;
                 }
@@ -607,11 +649,11 @@
             document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
             if (kmbSelected.length === 0) {
-                container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
+                container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
                 return;
             }
 
-            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
 
             kmbSelected.forEach(async (item, i) => {
                 const html = await buildBusCardHtml(item);
@@ -661,8 +703,8 @@
                     if (!etaObj || !etaObj.eta) {
                         return `
                         <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
-                            <span class="text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
-                            <div class="text-gray-500 font-bold text-xs">沒有班次</div>
+                            <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                            <div class="text-gray-400 dark:text-gray-500 font-bold text-xs">沒有班次</div>
                         </div>`;
                     }
 
@@ -681,7 +723,7 @@
 
                     return `
                     <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
-                        <span class="text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                        <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
                         <div class="text-right flex flex-col justify-center">
                             <div class="font-bold leading-none mb-1 flex items-baseline justify-end">${minHtml}</div>
                             <div class="text-gray-500 text-[9px] leading-none">${timeStr}</div>
@@ -690,19 +732,19 @@
                 };
 
                 return `
-                <div class="bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-800 flex flex-col shadow-sm">
+                <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
                     <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
                         <div class="${bgColorClass} text-white font-bold text-sm px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
                         <div class="flex flex-col leading-tight overflow-hidden">
-                            <span class="text-white font-bold text-[11px] truncate">${item.stopName}</span>
-                            <span class="text-gray-400 text-[9px] truncate">往 ${item.dest}</span>
+                            <span class="text-gray-900 dark:text-white font-bold text-[11px] truncate">${item.stopName}</span>
+                            <span class="text-gray-500 dark:text-gray-400 text-[9px] truncate">往 ${item.dest}</span>
                         </div>
                     </div>
                     ${renderRow('下一班', eta1)}
                     ${renderRow('第二班', eta2)}
                 </div>`;
             } catch (e) {
-                return `<div class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-red-900/50 text-xs text-red-500">載入錯誤</div>`;
+                return `<div class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-red-500/50 text-xs text-red-500 shadow-sm">載入錯誤</div>`;
             }
         }
 
@@ -719,12 +761,12 @@
 
             if (type === 'kmb') {
                 tabKmb.className = "flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors";
-                tabGmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent transition-colors";
+                tabGmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors";
                 panelKmb.classList.remove('hidden');
                 panelGmb.classList.add('hidden');
             } else {
                 tabGmb.className = "flex-1 py-2 text-sm font-bold text-[#34c759] border-b-2 border-[#34c759] transition-colors";
-                tabKmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent transition-colors";
+                tabKmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors";
                 panelGmb.classList.remove('hidden');
                 panelKmb.classList.add('hidden');
             }
@@ -801,8 +843,8 @@
                 if (!stopData.data || stopData.data.length === 0) continue;
 
                 let html = `
-                <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-red-500/30">
-                    <h4 class="text-[#ff453a] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
+                <div class="mt-4 bg-red-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-red-200 dark:border-red-500/30">
+                    <h4 class="text-[#ff453a] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
                         <span class="bg-[#ff453a] text-white px-1.5 py-0.5 rounded text-[10px]">九巴</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                     </h4>
                     <div class="space-y-2">
@@ -825,9 +867,9 @@
                     }));
 
                     html += `
-                        <label class="flex items-center justify-between p-2 bg-[#2c2c2e] rounded-lg border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer">
-                            <span class="text-xs text-gray-200 truncate pr-2 flex items-center gap-2">
-                                <span class="bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-300 font-bold">${stopObj.seq}</span>
+                        <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                            <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
+                                <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stopObj.seq}</span>
                                 ${stopName}
                             </span>
                             <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#ff453a] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
@@ -868,8 +910,8 @@
                         const uniqueId = `gmb-stops-${routeId}-${seq}`;
                         
                         let baseHtml = `
-                        <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-[#34c759]/40 relative">
-                            <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
+                        <div class="mt-4 bg-green-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-green-200 dark:border-[#34c759]/40 relative">
+                            <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
                                 <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
                             </h4>
                             <div class="space-y-2" id="${uniqueId}">
@@ -921,9 +963,9 @@
                             }));
 
                             stopsHtml += `
-                                <label class="flex items-center justify-between p-2 bg-[#2c2c2e] rounded-lg border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer">
-                                    <span class="text-xs text-gray-200 truncate pr-2 flex items-center gap-2">
-                                        <span class="bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-300 font-bold">${stopObj.stop_seq || ''}</span>
+                                <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                                    <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
+                                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stopObj.stop_seq || ''}</span>
                                         ${stopName}
                                     </span>
                                     <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#34c759] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
@@ -958,18 +1000,18 @@
             }
             kmbSelected.forEach((item, index) => {
                 const isGmb = item.company === 'gmb';
-                const badgeBorder = isGmb ? 'border-[#34c759]/40' : 'border-red-500/30';
+                const badgeBorder = isGmb ? 'border-green-200 dark:border-[#34c759]/40' : 'border-red-200 dark:border-red-500/30';
                 const routeColor = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
 
                 list.innerHTML += `
-                    <div class="flex items-center gap-1.5 bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
                         <div class="flex flex-col">
-                            <span class="text-xs font-bold text-gray-100"><span class="${routeColor} mr-1">${item.route}</span>${item.stopName}</span>
+                            <span class="text-xs font-bold text-gray-800 dark:text-gray-100"><span class="${routeColor} mr-1">${item.route}</span>${item.stopName}</span>
                             <span class="text-[9px] text-gray-500">往 ${item.dest}</span>
                         </div>
                         <div class="flex flex-col gap-0.5 ml-1">
-                            <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                            <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
+                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
                         </div>
                     </div>
                 `;
@@ -1013,7 +1055,7 @@
             fetchKMBData();
             
             setInterval(fetchWeather, 3 * 60 * 1000);
-            setInterval(fetchTrafficNews, 60 * 1000); // 配合需求更改為每 60 秒定時重新抓取數據
+            setInterval(fetchTrafficNews, 60 * 1000); 
             setInterval(fetchLRTData, 30 * 1000);
             setInterval(fetchKMBData, 30 * 1000);
         };
