@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>交通實時看板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { display: none; }
+        .scroll-area::-webkit-scrollbar { display: block; width: 3px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+
+        .glass-panel {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .collapsible-content {
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out;
+            max-height: 2000px;
+            opacity: 1;
+            overflow: hidden;
+        }
+        .collapsible-content.collapsed { max-height: 0; opacity: 0; }
+        .tag-active { background-color: #0a60ff; color: white; border-color: #0a60ff;}
+        .tag-inactive { background-color: #1c1c1e; color: #a1a1aa; border-color: #3f3f46;}
+        .modal-backdrop { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        
+        .sort-btn {
+            font-size: 8px;
+            padding: 2px 4px;
+            background: #3a3a3c;
+            border-radius: 4px;
+            margin: 1px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sort-btn:active { background: #5a5a5c; }
+    </style>
+</head>
+<body class="pb-10 relative">
+
+    <div class="h-12 w-full"></div>
+
+    <div class="max-w-[430px] mx-auto px-4 space-y-4">
+
+        <!-- 天氣看板 -->
+        <div class="bg-gradient-to-b from-[#1c2a3d] to-[#121a2f] rounded-2xl p-4 border border-gray-700 shadow-lg relative">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-700/60 pb-2">
+                <div class="text-xs text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
+                <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
+                    <span class="bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
+                        ⚠️ 警告生效
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-stretch gap-4">
+                <div class="flex-shrink-0 flex flex-col items-center w-[90px] border-r border-gray-700 pr-2">
+                    <div class="text-sm text-gray-300 font-medium" id="weather-location">屯門</div>
+                    <div class="flex items-start mt-1">
+                        <span class="text-4xl font-bold leading-none tracking-tighter" id="weather-temp">--</span>
+                        <span class="text-lg leading-none mt-1 ml-0.5">°C</span>
+                    </div>
+                    <div class="text-3xl my-2" id="weather-icon">☁️</div>
+                    <div class="text-[10px] text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
+                        <div>濕度 --%</div>
+                    </div>
+                </div>
+                <div class="flex-1 space-y-3 h-[130px] overflow-y-auto pl-1 pr-2 scroll-area">
+                    <div>
+                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">現時天氣</div>
+                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-desc">載入中...</div>
+                    </div>
+                    <div>
+                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">天氣預測</div>
+                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-forecast">載入中...</div>
+                    </div>
+                    <div>
+                        <div class="text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">九天天氣展望</div>
+                        <div class="text-[11px] text-gray-300 leading-relaxed text-justify" id="weather-outlook">載入中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 特別交通消息 -->
+        <div class="glass-panel rounded-2xl p-3">
+            <div class="flex justify-between items-center mb-2 px-1">
+                <h2 class="text-lg font-bold flex items-center gap-2">🚦 <span class="text-[#ff9f0a]">特別交通消息</span></h2>
+                <span class="text-[10px] text-gray-500 bg-gray-800 px-2 py-0.5 rounded cursor-pointer" onclick="fetchTrafficNews()">🔄 更新</span>
+            </div>
+            <div class="bg-[#1c1c1e] rounded-xl p-3 border border-gray-800 cursor-pointer active:bg-[#2c2c2e] transition-colors" onclick="openTrafficModal()">
+                <p id="traffic-news-preview" class="text-xs text-gray-300 leading-relaxed line-clamp-3">載入中...</p>
+                <div class="text-right mt-1.5" id="traffic-read-more" style="display: none;">
+                    <span class="text-[10px] text-blue-400 font-medium">點擊閱讀全文 👉</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 輕鐵模組 -->
+        <div class="glass-panel rounded-2xl p-3">
+            <div class="flex justify-between items-center mb-3 px-1">
+                <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleLRT()">
+                    <h2 class="text-lg font-bold">輕鐵</h2>
+                    <span id="lrt-toggle-icon" class="text-xs transition-transform duration-300">▼</span>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button class="bg-gray-800 text-gray-300 border border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openSettings(); event.stopPropagation();">⚙️ 設定</button>
+                    <div class="bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-600" onclick="fetchLRTData(); event.stopPropagation();">
+                        <span id="lrt-refresh-time">--:--</span> 🔄
+                    </div>
+                </div>
+            </div>
+            
+            <div id="lrt-content" class="collapsible-content">
+                <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 border-b border-gray-700" id="lrt-tags-container"></div>
+                <div class="flex justify-between items-end mb-2 px-1">
+                    <h3 class="font-bold text-md text-[#64d2ff]" id="lrt-current-station-name">載入中...</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3" id="lrt-platforms-container">
+                    <div class="text-xs text-gray-400 col-span-2 text-center py-4">正在連接港鐵伺服器...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 九巴/小巴模組 -->
+        <div class="glass-panel rounded-2xl p-3">
+            <div class="flex justify-between items-center mb-3 px-1">
+                <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleKMB()">
+                    <h2 class="text-lg font-bold">九巴 / 小巴</h2>
+                    <span id="kmb-toggle-icon" class="text-xs transition-transform duration-300">▼</span>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <button class="bg-gray-800 text-gray-300 border border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openKmbSettings(); event.stopPropagation();">⚙️ 設定</button>
+                    <div class="bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-600" onclick="fetchKMBData(); event.stopPropagation();">
+                        <span id="kmb-refresh-time">--:--</span> 🔄
+                    </div>
+                </div>
+            </div>
+            
+            <div id="kmb-content" class="collapsible-content collapsed">
+                <div id="kmb-container" class="grid grid-cols-2 gap-2.5">
+                    <div class="text-xs text-gray-400 col-span-2 text-center py-4">請前往設定添加九巴或小巴路線。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：天氣警告 -->
+    <div id="warning-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()">
+        <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
+                <h3 class="text-[#ff453a] text-lg font-bold flex items-center gap-2">⚠️ 特別天氣警告</h3>
+                <button onclick="closeWarningModal()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div class="text-sm space-y-3 overflow-y-auto scroll-area pr-2 flex-1" id="warning-modal-text">無特別警告</div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：特別交通消息 -->
+    <div id="traffic-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
+        <div class="bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 flex-shrink-0">
+                <h3 class="text-[#ff9f0a] text-lg font-bold flex items-center gap-2">🚦 特別交通消息</h3>
+                <button onclick="closeTrafficModal()" class="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div class="text-sm text-gray-200 whitespace-pre-wrap overflow-y-auto scroll-area pr-2 flex-1 leading-relaxed" id="traffic-modal-text"></div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：輕鐵設定 -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
+        <div class="bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-xl font-bold">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
+                <button onclick="closeSettings()" class="text-blue-500 font-bold px-4 py-1.5 bg-blue-500/20 rounded-full active:bg-blue-500/40">完成</button>
+            </div>
+            <div class="mb-4 flex-shrink-0">
+                <h4 class="text-[#ff9f0a] font-bold text-[11px] mb-2 tracking-wide">已選車站排序 (點擊箭頭調整首頁順序)</h4>
+                <div id="selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 min-h-[55px]"></div>
+            </div>
+            <div class="mb-4 flex-shrink-0 relative">
+                <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-[#2c2c2e] text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
+            </div>
+            <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：九巴/小巴設定 -->
+    <div id="kmb-settings-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex-col justify-end">
+        <div class="bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 class="text-xl font-bold">設定九巴 / 小巴路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
+                <button onclick="closeKmbSettings()" class="text-blue-500 font-bold px-4 py-1.5 bg-blue-500/20 rounded-full active:bg-blue-500/40">完成</button>
+            </div>
+            <div class="mb-4 flex-shrink-0">
+                <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">已選站點排序 (點擊箭頭調整首頁順序)</h4>
+                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 min-h-[55px]"></div>
+            </div>
+            <div class="mb-4 flex-shrink-0 flex gap-2">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴或小巴路線 (例如 60X, 44)" class="flex-1 bg-[#2c2c2e] text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
+                <button onclick="searchBusRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
+            </div>
+            <div id="kmb-search-status" class="text-center text-[#64d2ff] font-bold text-xs mb-2"></div>
+            <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // ================= 收合控制 (Accordion) =================
+        let lrtExpanded = true;
+        let kmbExpanded = false;
+
+        function updateAccordionUI() {
+            const lrtContent = document.getElementById('lrt-content');
+            const lrtIcon = document.getElementById('lrt-toggle-icon');
+            if (lrtExpanded) {
+                lrtContent.classList.remove('collapsed');
+                lrtIcon.style.transform = "rotate(0deg)";
+            } else {
+                lrtContent.classList.add('collapsed');
+                lrtIcon.style.transform = "rotate(-90deg)";
+            }
+
+            const kmbContent = document.getElementById('kmb-content');
+            const kmbIcon = document.getElementById('kmb-toggle-icon');
+            if (kmbExpanded) {
+                kmbContent.classList.remove('collapsed');
+                kmbIcon.style.transform = "rotate(0deg)";
+            } else {
+                kmbContent.classList.add('collapsed');
+                kmbIcon.style.transform = "rotate(-90deg)";
+            }
+        }
+
+        function toggleLRT() {
+            lrtExpanded = !lrtExpanded;
+            if (lrtExpanded) kmbExpanded = false; // 互斥邏輯
+            updateAccordionUI();
+        }
+
+        function toggleKMB() {
+            kmbExpanded = !kmbExpanded;
+            if (kmbExpanded) lrtExpanded = false; // 互斥邏輯
+            updateAccordionUI();
+        }
+
+        // ================= 輕鐵資料區 =================
+        const STATION_GROUPS = {
+            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '兆禧', '250': '屯門泳池', '260': '豐景園' },
+            "屯門市中心": { '265': '兆麟', '270': '安定', '275': '友愛', '280': '市中心', '295': '屯門', '300': '杯渡', '310': '何福堂', '320': '新墟', '330': '景峰' },
+            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興(北)', '200': '大興(南)', '210': '銀圍' },
+            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '390': '坑尾村' },
+            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '天逸', '540': '天恆', '550': '濕地公園', '560': '天秀' },
+            "元朗": { '400': '屏山', '425': '塘坊村', '570': '水邊圍', '580': '豐年路', '590': '康樂路', '600': '大棠路', '610': '元朗' }
+        };
+
+        const STATION_DICT = Object.values(STATION_GROUPS).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+        
+        let savedLrtStations = JSON.parse(localStorage.getItem('lrtStations'));
+        let selectedStations = ['260', '001', '270', '275'];
+        if (savedLrtStations && Array.isArray(savedLrtStations)) {
+            let validStations = savedLrtStations.filter(id => STATION_DICT[id]);
+            if (validStations.length > 0) selectedStations = validStations;
+        }
+        let currentStationId = selectedStations[0];
+        localStorage.setItem('lrtStations', JSON.stringify(selectedStations));
+
+        let fullTrafficText = "";
+
+        // ================= 九巴/小巴資料區 =================
+        let kmbStopsDict = {}; 
+        let gmbStopsDict = {}; // 快取小巴站名
+        let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
+        let kmbRoutesList = []; // 快取九巴全港路線
+
+        // ================= 通用及天氣 =================
+        function updateClock() {
+            const now = new Date();
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            document.getElementById('current-time').textContent = 
+                `${now.getMonth()+1}月${now.getDate()}日 (${days[now.getDay()]}) ` + 
+                `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        async function fetchWeather() {
+            try {
+                const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+                const data = await res.json();
+                const tmTemp = data.temperature.data.find(d => d.place === '屯門');
+                if (tmTemp) document.getElementById('weather-temp').innerText = tmTemp.value;
+                
+                let detailsHTML = '';
+                if (data.humidity && data.humidity.data[0]) detailsHTML += `<div>濕度 ${data.humidity.data[0].value}%</div>`;
+                if (data.rainfall && data.rainfall.data) {
+                    const tmRain = data.rainfall.data.find(d => d.place === '屯門');
+                    if (tmRain && tmRain.max > 0) detailsHTML += `<div>降雨 ${tmRain.max}mm</div>`;
+                }
+                if (data.uvindex && data.uvindex.data && data.uvindex.data.length > 0) detailsHTML += `<div>UV ${data.uvindex.data[0].value}</div>`;
+                document.getElementById('weather-details').innerHTML = detailsHTML || '<div>-</div>';
+
+                const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
+                const warnData = await warnRes.json();
+                const warnIcon = document.getElementById('weather-warning-icon');
+                const warnModalText = document.getElementById('warning-modal-text');
+                
+                if (Object.keys(warnData).length > 0) {
+                    warnIcon.classList.remove('hidden');
+                    let warnings = [];
+                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key].name}</div>`); }
+                    warnModalText.innerHTML = warnings.join('');
+                } else {
+                    warnIcon.classList.add('hidden');
+                    warnModalText.innerHTML = '<div class="text-gray-400 text-center py-6">目前沒有生效的天氣警告</div>';
+                }
+
+                const flwRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc');
+                const flwData = await flwRes.json();
+                if (flwData.generalSituation) document.getElementById('weather-desc').innerText = flwData.generalSituation;
+                if (flwData.forecastDesc) document.getElementById('weather-forecast').innerText = flwData.forecastDesc;
+
+                const fndRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+                const fndData = await fndRes.json();
+                if (fndData.generalSituation) document.getElementById('weather-outlook').innerText = fndData.generalSituation;
+                
+            } catch (err) { console.error("天氣 API 錯誤", err); }
+        }
+
+        async function fetchTrafficNews() {
+            try {
+                const mockTrafficData = "由於水管爆裂，介乎屯門鄉事會路與屯興路之間的一段屯門公路(往九龍方向)的慢線現已封閉。駕駛人士只可使用餘下行車線。\n\n另外，較早前因交通意外而封閉的皇珠路(往屯門公路方向)近友愛邨的快線現已解封。現時上址交通繁忙，請駕駛人士保持忍讓。";
+                fullTrafficText = mockTrafficData;
+                const previewEl = document.getElementById('traffic-news-preview');
+                const readMoreEl = document.getElementById('traffic-read-more');
+                previewEl.innerText = fullTrafficText;
+                document.getElementById('traffic-modal-text').innerText = fullTrafficText;
+                if (fullTrafficText.length > 50 || fullTrafficText.includes('\n')) readMoreEl.style.display = 'block';
+                else readMoreEl.style.display = 'none';
+            } catch (err) {}
+        }
+
+        function openWarningModal() { document.getElementById('warning-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('warning-modal').classList.remove('opacity-0'); }, 10); }
+        function closeWarningModal() { document.getElementById('warning-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('warning-modal').classList.add('hidden'); }, 300); }
+        function openTrafficModal() { if(fullTrafficText) { document.getElementById('traffic-modal').classList.remove('hidden'); setTimeout(() => { document.getElementById('traffic-modal').classList.remove('opacity-0'); }, 10); } }
+        function closeTrafficModal() { document.getElementById('traffic-modal').classList.add('opacity-0'); setTimeout(() => { document.getElementById('traffic-modal').classList.add('hidden'); }, 300); }
+
+        // ================= 輕鐵邏輯 =================
+        function renderLrtTags() {
+            const container = document.getElementById('lrt-tags-container');
+            container.innerHTML = '';
+            selectedStations.forEach(id => {
+                const isActive = id === currentStationId;
+                const btnClass = isActive ? 'tag-active border' : 'tag-inactive border';
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0 ${btnClass}`;
+                btn.innerText = STATION_DICT[id] || `車站 ${id}`;
+                btn.onclick = () => { currentStationId = id; renderLrtTags(); fetchLRTData(); };
+                container.appendChild(btn);
+            });
+        }
+
+        async function fetchLRTData() {
+            if(!currentStationId) return;
+            document.getElementById('lrt-current-station-name').innerText = `${STATION_DICT[currentStationId] || '未知'}站`;
+            const container = document.getElementById('lrt-platforms-container');
+            
+            const now = new Date();
+            document.getElementById('lrt-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            try {
+                const res = await fetch(`https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${currentStationId}`);
+                const data = await res.json();
+                container.innerHTML = ''; 
+
+                if (data.status !== 1 || !data.platform_list || data.platform_list.length === 0) {
+                    container.innerHTML = '<div class="text-xs text-red-400 col-span-2 py-2 text-center">目前沒有班次資料或暫停服務。</div>';
+                    return;
+                }
+
+                data.platform_list.forEach(platform => {
+                    let platformHtml = `
+                    <div class="bg-[#1c1c1e] rounded-xl border border-gray-800 overflow-hidden flex flex-col h-full">
+                        <div class="bg-[#1c2a3d] p-1.5 flex items-center gap-2 border-b border-gray-800">
+                            <div class="bg-[#0a60ff] text-white w-5 h-5 rounded flex justify-center items-center font-bold text-xs">${platform.platform_id}</div>
+                            <div class="text-xs font-bold text-gray-200">月台</div>
+                        </div>
+                        <div class="p-2 space-y-2 flex-grow">
+                    `;
+
+                    if (!platform.route_list || platform.route_list.length === 0) {
+                        platformHtml += `<div class="text-[10px] text-gray-500 text-center py-2">暫無班次</div>`;
+                    } else {
+                        platform.route_list.forEach((route, index) => {
+                            let trainEmoji = route.train_length == 1 ? '🚃' : (route.train_length == 2 ? '🚃🚃' : '');
+                            const trainBadgeHtml = trainEmoji ? `<span class="ml-1 text-[13px]">${trainEmoji}</span>` : '';
+                            
+                            let timeText = route.time_ch;
+                            let exactTime = '--:--';
+                            let minsVal = 999;
+
+                            if (!timeText || timeText === '-' || timeText.includes('離開') || timeText.includes('即將抵達')) {
+                                timeText = '即將抵達';
+                                minsVal = 0;
+                                const nowTime = new Date();
+                                exactTime = `${String(nowTime.getHours()).padStart(2,'0')}:${String(nowTime.getMinutes()).padStart(2,'0')}`;
+                            } else {
+                                const match = timeText.match(/(\d+)/);
+                                if (match) {
+                                    minsVal = parseInt(match[1], 10);
+                                    timeText = `${minsVal} 分鐘`;
+                                    const futureTime = new Date(new Date().getTime() + minsVal * 60000);
+                                    exactTime = `${String(futureTime.getHours()).padStart(2,'0')}:${String(futureTime.getMinutes()).padStart(2,'0')}`;
+                                }
+                            }
+
+                            const timeClass = (minsVal <= 2) ? 'text-[#ff453a]' : 'text-[#64d2ff]';
+                            const borderTopClass = index > 0 ? 'border-t border-gray-800 pt-2 mt-2' : '';
+
+                            platformHtml += `
+                            <div class="flex justify-between items-end ${borderTopClass}">
+                                <div class="flex-1">
+                                    <div class="text-[#64d2ff] font-bold text-base leading-tight flex items-center flex-wrap gap-y-1"><span class="mr-1">${route.route_no}</span>${trainBadgeHtml}</div>
+                                    <div class="text-[10px] text-gray-400 mt-0.5 truncate pr-1">往 ${route.dest_ch || '未知'}</div>
+                                </div>
+                                <div class="text-right flex-shrink-0">
+                                    <div class="${timeClass} font-bold text-sm leading-none">${timeText}</div>
+                                    <div class="text-[9px] text-gray-500 mt-1">${exactTime}</div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    platformHtml += `</div></div>`;
+                    container.innerHTML += platformHtml;
+                });
+            } catch (err) { container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center">無法連接網路，請稍後再試。</div>'; }
+        }
+
+        function renderSortList() {
+            const list = document.getElementById('selected-sort-list');
+            list.innerHTML = '';
+            if(selectedStations.length === 0) {
+                list.innerHTML = '<span class="text-xs text-gray-500 my-auto ml-2">尚未選擇車站</span>';
+                document.getElementById('selected-count').innerText = 0;
+                return;
+            }
+            selectedStations.forEach((id, index) => {
+                list.innerHTML += `
+                    <div class="flex items-center gap-1.5 bg-[#1c2a3d] border border-blue-500/40 px-2 py-1.5 rounded-lg shadow-sm">
+                        <span class="text-sm font-bold text-gray-100">${STATION_DICT[id] || id}</span>
+                        <div class="flex flex-col gap-0.5">
+                            <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
+                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('selected-count').innerText = selectedStations.length;
+        }
+
+        function moveSort(index, direction) {
+            if (index + direction < 0 || index + direction >= selectedStations.length) return;
+            const temp = selectedStations[index];
+            selectedStations[index] = selectedStations[index + direction];
+            selectedStations[index + direction] = temp;
+            renderSortList();
+        }
+
+        function toggleStationSelection(id, isChecked) {
+            if (isChecked) { if (!selectedStations.includes(id)) selectedStations.push(id); } 
+            else { selectedStations = selectedStations.filter(s => s !== id); }
+            renderSortList();
+        }
+
+        function openSettings() {
+            const modal = document.getElementById('settings-modal');
+            const listContainer = document.getElementById('station-list-settings');
+            listContainer.innerHTML = '';
+            document.getElementById('station-search').value = '';
+            
+            for (const [groupName, stations] of Object.entries(STATION_GROUPS)) {
+                let html = `<div class="group-container"><h4 class="text-[#64d2ff] font-bold text-sm mb-2 pb-1 border-b border-gray-700/60">${groupName}</h4><div class="grid grid-cols-2 gap-2">`;
+                for (const [id, name] of Object.entries(stations)) {
+                    const isChecked = selectedStations.includes(id) ? 'checked' : '';
+                    html += `
+                        <label class="station-item flex items-center justify-between p-2.5 bg-[#2c2c2e] rounded-xl border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer" data-name="${name}" data-id="${id}">
+                            <span class="text-sm font-bold text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
+                            <input type="checkbox" value="${id}" class="w-4 h-4 accent-blue-600 rounded flex-shrink-0" onchange="toggleStationSelection('${id}', this.checked)" ${isChecked}>
+                        </label>`;
+                }
+                html += `</div></div>`;
+                listContainer.innerHTML += html;
+            }
+            renderSortList();
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+
+        function filterStations() {
+            const query = document.getElementById('station-search').value.toLowerCase();
+            document.querySelectorAll('.group-container').forEach(group => {
+                let hasVisible = false;
+                group.querySelectorAll('.station-item').forEach(item => {
+                    if (item.getAttribute('data-name').includes(query) || item.getAttribute('data-id').includes(query)) { item.style.display = 'flex'; hasVisible = true; } 
+                    else { item.style.display = 'none'; }
+                });
+                group.style.display = hasVisible ? 'block' : 'none';
+            });
+        }
+
+        function closeSettings() {
+            if (selectedStations.length === 0) { alert("請至少選擇一個車站！"); return; }
+            localStorage.setItem('lrtStations', JSON.stringify(selectedStations)); 
+            if (!selectedStations.includes(currentStationId)) currentStationId = selectedStations[0];
+            document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex');
+            renderLrtTags(); fetchLRTData();
+        }
+
+        // ================= 九巴/小巴邏輯 =================
+        async function fetchAllKmbStops() {
+            if(Object.keys(kmbStopsDict).length > 0) return;
+            try {
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+                const data = await res.json();
+                data.data.forEach(stop => { kmbStopsDict[stop.stop] = stop.name_tc; });
+            } catch (e) {}
+        }
+
+        async function fetchAllKmbRoutes() {
+            if (kmbRoutesList.length > 0) return;
+            try {
+                const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+                const data = await res.json();
+                if (data.data) {
+                    kmbRoutesList = data.data;
+                }
+            } catch (e) {}
+        }
+
+        async function fetchKMBData() {
+            const container = document.getElementById('kmb-container');
+            const now = new Date();
+            document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            if (kmbSelected.length === 0) {
+                container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
+                return;
+            }
+
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
+
+            kmbSelected.forEach(async (item, i) => {
+                const html = await buildBusCardHtml(item);
+                const card = document.getElementById(`bus-card-${i}`);
+                if (card) card.outerHTML = html;
+            });
+        }
+
+        async function buildBusCardHtml(item) {
+            try {
+                let etas = [];
+                const isGmb = item.company === 'gmb';
+                
+                if (isGmb) {
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/eta/${item.routeId}/${item.stopId}/${item.dir}`);
+                    const json = await res.json();
+                    if(json.data) {
+                        etas = json.data
+                            .filter(d => d.eta !== null)
+                            .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    }
+                } else {
+                    const serviceType = item.serviceType || '1';
+                    const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${item.stopId}/${item.route}/${serviceType}`);
+                    const json = await res.json();
+                    if(json.data) {
+                        etas = json.data
+                            .filter(d => d.dir === item.dir && d.eta !== null)
+                            .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    }
+                }
+
+                let eta1 = etas[0];
+                let eta2 = etas[1];
+
+                const borderColorClass = isGmb ? 'border-[#34c759]' : 'border-[#ff453a]';
+                const textColorClass = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
+                const bgColorClass = isGmb ? 'bg-[#34c759]' : 'bg-[#ff453a]';
+
+                const renderRow = (label, etaObj) => {
+                    if (!etaObj || !etaObj.eta) {
+                        return `
+                        <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
+                            <span class="text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                            <div class="text-gray-500 font-bold text-xs">沒有班次</div>
+                        </div>`;
+                    }
+
+                    const etaTime = new Date(etaObj.eta);
+                    const now = new Date();
+                    const diffMs = etaTime - now;
+                    let diffMins = Math.floor(diffMs / 60000);
+                    let timeStr = `${String(etaTime.getHours()).padStart(2,'0')}:${String(etaTime.getMinutes()).padStart(2,'0')}`;
+                    
+                    let minHtml = '';
+                    if (diffMins <= 0) {
+                        minHtml = `<span class="text-sm tracking-tight ${textColorClass}">即將抵達</span>`;
+                    } else {
+                        minHtml = `<span class="text-2xl ${textColorClass}">${diffMins}</span><span class="text-[10px] ml-0.5 ${textColorClass} font-normal">分</span>`;
+                    }
+
+                    return `
+                    <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
+                        <span class="text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                        <div class="text-right flex flex-col justify-center">
+                            <div class="font-bold leading-none mb-1 flex items-baseline justify-end">${minHtml}</div>
+                            <div class="text-gray-500 text-[9px] leading-none">${timeStr}</div>
+                        </div>
+                    </div>`;
+                };
+
+                return `
+                <div class="bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-800 flex flex-col shadow-sm">
+                    <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
+                        <div class="${bgColorClass} text-white font-bold text-sm px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
+                        <div class="flex flex-col leading-tight overflow-hidden">
+                            <span class="text-white font-bold text-[11px] truncate">${item.stopName}</span>
+                            <span class="text-gray-400 text-[9px] truncate">往 ${item.dest}</span>
+                        </div>
+                    </div>
+                    ${renderRow('下一班', eta1)}
+                    ${renderRow('第二班', eta2)}
+                </div>`;
+            } catch (e) {
+                return `<div class="bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-red-900/50 text-xs text-red-500">載入錯誤</div>`;
+            }
+        }
+
+                        async function searchBusRoute() {
+            const routeInput = document.getElementById('kmb-route-input').value.trim().toUpperCase();
+            if(!routeInput) return;
+            
+            const statusEl = document.getElementById('kmb-search-status');
+            const container = document.getElementById('kmb-route-results');
+            container.innerHTML = '';
+            
+            let foundKmb = false;
+            let foundGmb = false;
+
+            // 1. 搜尋九巴
+            statusEl.innerText = '正在搜尋九巴...';
+            try {
+                await fetchAllKmbStops(); 
+                await fetchAllKmbRoutes();
+                const matchedRoutes = kmbRoutesList.filter(r => r.route === routeInput);
+                if(matchedRoutes.length > 0) {
+                    foundKmb = true;
+                    await renderKmbSearchResults(matchedRoutes, routeInput, container);
+                }
+            } catch (e) { console.error("KMB Search Error:", e); }
+
+            // 2. 搜尋綠色小巴 (精確搜尋特定路線，無需載入全港)
+            statusEl.innerText = '正在搜尋小巴路線...';
+            const regions = ['NT', 'KLN', 'HKI'];
+            for (const region of regions) {
+                try {
+                    // 直接向 API 要求指定的路線資料，避免全量加載及資料結構錯誤
+                    const mbRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${region}/${routeInput}`);
+                    if (!mbRes.ok) continue;
+                    const mbData = await mbRes.json();
+                    
+                    // 如果該分區有找到指定的路線資料 (API 會回傳陣列)
+                    if (mbData.data && mbData.data.length > 0) {
+                        foundGmb = true;
+                        // 直接將回傳的路線陣列傳給 renderGmbSearchResults
+                        await renderGmbSearchResults(mbData.data, routeInput, container);
+                    }
+                } catch(e) { console.error("GMB Search Error:", e); }
+            }
+
+            if(!foundKmb && !foundGmb) {
+                statusEl.innerText = `找不到該路線 (${routeInput})。請嘗試輸入完整編號或檢查網絡。`;
+                statusEl.className = "text-center text-red-400 font-bold text-xs mb-2";
+            } else {
+                statusEl.innerText = '搜尋完成！';
+                statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
+            }
+        }
+
+
+
+        async function renderKmbSearchResults(routes, routeCode, container) {
+            for (const r of routes) {
+                const dest = r.dest_tc;
+                const orig = r.orig_tc;
+                const dirParam = r.bound.toLowerCase() === 'i' ? 'inbound' : 'outbound';
+
+                const stopRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${routeCode}/${dirParam}/${r.service_type}`);
+                const stopData = await stopRes.json();
+
+                if (!stopData.data || stopData.data.length === 0) continue;
+
+                let html = `
+                <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-red-500/30">
+                    <h4 class="text-[#ff453a] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
+                        <span class="bg-[#ff453a] text-white px-1.5 py-0.5 rounded text-[10px]">九巴</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
+                    </h4>
+                    <div class="space-y-2">
+                `;
+
+                stopData.data.forEach(stopObj => {
+                    const stopName = kmbStopsDict[stopObj.stop] || stopObj.stop;
+                    const idStr = `${routeCode}_${r.bound}_${r.service_type}_${stopObj.stop}`;
+                    const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
+
+                    const itemData = encodeURIComponent(JSON.stringify({
+                        id: idStr,
+                        company: 'kmb',
+                        route: routeCode,
+                        dir: r.bound,
+                        serviceType: r.service_type,
+                        stopId: stopObj.stop,
+                        stopName: stopName,
+                        dest: dest
+                    }));
+
+                    html += `
+                        <label class="flex items-center justify-between p-2 bg-[#2c2c2e] rounded-lg border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                            <span class="text-xs text-gray-200 truncate pr-2 flex items-center gap-2">
+                                <span class="bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-300 font-bold">${stopObj.seq}</span>
+                                ${stopName}
+                            </span>
+                            <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#ff453a] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
+                        </label>
+                    `;
+                });
+                html += `</div></div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            }
+        }
+
+        async function renderGmbSearchResults(routes, routeCode, container) {
+            for (const r of routes) {
+                const routeId = r.route_id;
+                
+                // 確保獲取到 directions
+                let directions = r.directions;
+                if (!directions) {
+                    try {
+                        const detailRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route/${routeId}`);
+                        const detailData = await detailRes.json();
+                        if (detailData.data && detailData.data.directions) directions = detailData.data.directions;
+                    } catch(e) {}
+                }
+                if (!directions) continue;
+
+                for (const dir of directions) {
+                    const seq = dir.route_seq;
+                    const dest = dir.dest_tc;
+                    const orig = dir.orig_tc;
+                    
+                    try {
+                        const stopRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/route-stop/${routeId}/${seq}`);
+                        const stopData = await stopRes.json();
+                        if (!stopData.data || stopData.data.length === 0) continue;
+
+                        const uniqueId = `gmb-stops-${routeId}-${seq}`;
+                        
+                        // 先畫出骨架，告訴用家正在載入，避免覺得壞了
+                        let baseHtml = `
+                        <div class="mt-4 bg-[#1c2a3d]/30 p-3 rounded-xl border border-[#34c759]/40 relative">
+                            <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-700/60 flex items-center gap-2">
+                                <span class="bg-[#34c759] text-white px-1.5 py-0.5 rounded text-[10px]">綠小</span> 往 ${dest} <span class="text-[10px] text-gray-500 font-normal ml-1">(${orig} 開出)</span>
+                            </h4>
+                            <div class="space-y-2" id="${uniqueId}">
+                                <div class="text-[11px] text-[#34c759] text-center py-3 animate-pulse bg-[#34c759]/10 rounded-lg">正在逐一載入小巴站點...<br><span class="text-gray-400 text-[9px]">為免伺服器封鎖，請耐心等候幾秒鐘</span></div>
+                            </div>
+                        </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', baseHtml);
+
+                        const stopsContainer = document.getElementById(uniqueId);
+                        let stopsHtml = '';
+
+                        // 逐個排隊拿小巴站名，防止並發引發 429 Error
+                        for (const stopObj of stopData.data) {
+                            let stopName = gmbStopsDict[stopObj.stop_id];
+                            if (!stopName) {
+                                try {
+                                    const sRes = await fetch(`https://data.etabus.gov.hk/v1/transport/minibus/stop/${stopObj.stop_id}`);
+                                    if (sRes.ok) {
+                                        const sData = await sRes.json();
+                                        stopName = sData.data.name_tc || `車站 ${stopObj.stop_id}`;
+                                        gmbStopsDict[stopObj.stop_id] = stopName;
+                                    } else {
+                                        stopName = `車站 ${stopObj.stop_id}`;
+                                    }
+                                } catch(e) { stopName = `車站 ${stopObj.stop_id}`; }
+                            }
+
+                            const idStr = `gmb_${routeId}_${seq}_${stopObj.stop_id}`;
+                            const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
+
+                            const itemData = encodeURIComponent(JSON.stringify({
+                                id: idStr,
+                                company: 'gmb',
+                                routeId: routeId,
+                                route: r.route_code || routeCode,
+                                dir: seq,
+                                stopId: stopObj.stop_id,
+                                stopName: stopName,
+                                dest: dest
+                            }));
+
+                            stopsHtml += `
+                                <label class="flex items-center justify-between p-2 bg-[#2c2c2e] rounded-lg border border-gray-700 active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                                    <span class="text-xs text-gray-200 truncate pr-2 flex items-center gap-2">
+                                        <span class="bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-300 font-bold">${stopObj.stop_seq}</span>
+                                        ${stopName}
+                                    </span>
+                                    <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#34c759] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
+                                </label>
+                            `;
+                        }
+                        
+                        // 載入完成，將站點塞進去取代 Loading 動畫
+                        if(stopsContainer) stopsContainer.innerHTML = stopsHtml;
+
+                    } catch(e) {}
+                }
+            }
+        }
+
+        function toggleBusSelection(checkbox) {
+            const data = JSON.parse(decodeURIComponent(checkbox.value));
+            if (checkbox.checked) {
+                if (!kmbSelected.some(s => s.id === data.id)) kmbSelected.push(data);
+            } else {
+                kmbSelected = kmbSelected.filter(s => s.id !== data.id);
+            }
+            renderKmbSortList();
+        }
+
+        function renderKmbSortList() {
+            const list = document.getElementById('kmb-selected-sort-list');
+            list.innerHTML = '';
+            if(kmbSelected.length === 0) {
+                list.innerHTML = '<span class="text-xs text-gray-500 my-auto ml-2">尚未選擇站點</span>';
+                document.getElementById('kmb-selected-count').innerText = 0;
+                return;
+            }
+            kmbSelected.forEach((item, index) => {
+                const isGmb = item.company === 'gmb';
+                const badgeBorder = isGmb ? 'border-[#34c759]/40' : 'border-red-500/30';
+                const routeColor = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
+
+                list.innerHTML += `
+                    <div class="flex items-center gap-1.5 bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-gray-100"><span class="${routeColor} mr-1">${item.route}</span>${item.stopName}</span>
+                            <span class="text-[9px] text-gray-500">往 ${item.dest}</span>
+                        </div>
+                        <div class="flex flex-col gap-0.5 ml-1">
+                            <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-300 hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
+                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-300 hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('kmb-selected-count').innerText = kmbSelected.length;
+        }
+
+        function moveKmbSort(index, direction) {
+            if (index + direction < 0 || index + direction >= kmbSelected.length) return;
+            const temp = kmbSelected[index];
+            kmbSelected[index] = kmbSelected[index + direction];
+            kmbSelected[index + direction] = temp;
+            renderKmbSortList();
+        }
+
+        function openKmbSettings() {
+            renderKmbSortList();
+            document.getElementById('kmb-route-input').value = '';
+            document.getElementById('kmb-route-results').innerHTML = '';
+            document.getElementById('kmb-search-status').innerText = '';
+            document.getElementById('kmb-settings-modal').classList.remove('hidden');
+            document.getElementById('kmb-settings-modal').classList.add('flex');
+        }
+
+        function closeKmbSettings() {
+            localStorage.setItem('kmbStations', JSON.stringify(kmbSelected)); 
+            document.getElementById('kmb-settings-modal').classList.add('hidden');
+            document.getElementById('kmb-settings-modal').classList.remove('flex');
+            fetchKMBData();
+        }
+
+        // ================= 初始化 =================
+        window.onload = () => {
+            updateAccordionUI(); 
+            fetchWeather();
+            fetchTrafficNews(); 
+            renderLrtTags();
+            fetchLRTData();
+            fetchKMBData();
+            
+            setInterval(fetchWeather, 3 * 60 * 1000);
+            setInterval(fetchTrafficNews, 5 * 60 * 1000);
+            setInterval(fetchLRTData, 30 * 1000);
+            setInterval(fetchKMBData, 30 * 1000);
+        };
+    </script>
+</body>
+</html>
