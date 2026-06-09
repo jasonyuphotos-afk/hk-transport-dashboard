@@ -60,12 +60,24 @@
         .dark .sort-btn { background: #3a3a3c; }
         .sort-btn:active { background: #d1d5db; }
         .dark .sort-btn:active { background: #5a5a5c; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .dark footer {
+            border-top-color: #3a3a3c;
+            color: #666;
+        }
     </style>
 </head>
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
     <div class="absolute top-3 right-4 z-10">
-        <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors">
+        <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center">
             <span id="theme-icon"></span>
         </button>
     </div>
@@ -78,7 +90,7 @@
             <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform mr-10" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
+                    <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-sm">
                         ⚠️ 警告生效
                     </span>
                 </div>
@@ -116,7 +128,7 @@
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-2 px-1">
                 <h2 class="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">🚦 <span class="text-[#ff9f0a]">特別交通消息</span></h2>
-                <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchTrafficNews(); event.stopPropagation();">
+                <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchTrafficNews(); event.stopPropagation()">
                     <span id="traffic-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
                 </div>
             </div>
@@ -135,8 +147,8 @@
                     <span id="lrt-toggle-icon" class="text-xs transition-transform duration-300 text-gray-500">▼</span>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openSettings(); event.stopPropagation();">⚙️ 設定</button>
-                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchLRTData(); event.stopPropagation();">
+                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openSettings(); event.stopPropagation()">⚙️</button>
+                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchLRTData(); event.stopPropagation()">
                         <span id="lrt-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
                     </div>
                 </div>
@@ -160,8 +172,8 @@
                     <span id="kmb-toggle-icon" class="text-xs transition-transform duration-300 text-gray-500">▼</span>
                 </div>
                 <div class="flex gap-2 items-center">
-                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openKmbSettings(); event.stopPropagation();">⚙️ 設定</button>
-                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchKMBData(); event.stopPropagation();">
+                    <button class="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-2.5 py-1 rounded-full text-xs" onclick="openKmbSettings(); event.stopPropagation()">⚙️</button>
+                    <div class="bg-gray-100 dark:bg-[#3a3a3c] px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchKMBData(); event.stopPropagation()">
                         <span id="kmb-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
                     </div>
                 </div>
@@ -199,7 +211,7 @@
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
-                <button onclick="closeSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
+                <button onclick="closeSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/30">完成</button>
             </div>
             <div class="mb-4 flex-shrink-0">
                 <h4 class="text-[#ff9f0a] font-bold text-[11px] mb-2 tracking-wide">已選車站排序 (點擊箭頭調整首頁順序)</h4>
@@ -207,7 +219,7 @@
             </div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
+                <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none">
             </div>
             <div id="station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
@@ -217,11 +229,11 @@
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定巴士路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
-                <button onclick="closeKmbSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
+                <button onclick="closeKmbSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/30">完成</button>
             </div>
             <div class="mb-4 flex-shrink-0">
-                <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">已選站點排序 (點擊箭頭調整首頁順序)</h4>
-                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
+                <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">��選站點排序 (點擊箭頭調整首頁順序)</h4>
+                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto"></div>
             </div>
             
             <div class="mb-3 flex-shrink-0 flex border-b border-gray-200 dark:border-gray-700">
@@ -230,12 +242,12 @@
             </div>
 
             <div id="search-panel-kmb" class="mb-4 flex-shrink-0 flex gap-2">
-                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
+                <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none">
                 <button onclick="searchKmbRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
 
             <div id="search-panel-gmb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
-                <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#34c759] text-sm uppercase">
+                <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none">
                 <button onclick="searchGmbRoute()" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
 
@@ -304,11 +316,11 @@
 
         // ================= 輕鐵資料區 =================
         const STATION_GROUPS = {
-            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '兆禧', '250': '屯門泳池', '260': '豐景園' },
+            "屯門碼頭及周邊": { '001': '屯門碼頭', '010': '美樂', '015': '蝴蝶', '020': '輕鐵車廠', '030': '龍門', '040': '青山村', '050': '青雲', '060': '建安', '240': '屯門碼頭', '250': '兆康' },
             "屯門市中心": { '265': '兆麟', '270': '安定', '275': '友愛', '280': '市中心', '295': '屯門', '300': '杯渡', '310': '何福堂', '320': '新墟', '330': '景峰' },
-            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興(北)', '200': '大興(南)', '210': '銀圍' },
-            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '390': '坑尾村' },
-            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '天逸', '540': '天恆', '550': '濕地公園', '560': '天秀' },
+            "大興及良田": { '070': '河田', '075': '蔡意橋', '080': '澤豐', '130': '建生', '140': '田景', '150': '良景', '160': '新圍', '170': '石排', '180': '鳴琴', '190': '大興' },
+            "兆康及洪水橋": { '090': '屯門醫院', '100': '兆康', '110': '麒麟', '120': '青松', '340': '鳳地', '350': '泥圍', '360': '藍地', '370': '鍾屋村', '380': '洪水橋', '390': '屏山' },
+            "天水圍": { '430': '天水圍', '445': '天慈', '448': '天湖', '450': '銀座', '460': '天瑞', '480': '天耀', '490': '樂湖', '500': '天榮', '510': '頌富', '520': '天富', '530': '天光' },
             "元朗": { '400': '屏山', '425': '塘坊村', '570': '水邊圍', '580': '豐年路', '590': '康樂路', '600': '大棠路', '610': '元朗' }
         };
 
@@ -366,7 +378,7 @@
                 if (Object.keys(warnData).length > 0) {
                     warnIcon.classList.remove('hidden');
                     let warnings = [];
-                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key].name}</div>`); }
+                    for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key]}</div>`); }
                     warnModalText.innerHTML = warnings.join('');
                 } else {
                     warnIcon.classList.add('hidden');
@@ -386,7 +398,6 @@
         }
 
         async function fetchTrafficNews() {
-            // 更新 Traffic UI 時間
             const now = new Date();
             const trafficTimeEl = document.getElementById('traffic-refresh-time');
             if (trafficTimeEl) {
@@ -556,8 +567,8 @@
                     <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border border-blue-200 dark:border-blue-500/40 px-2 py-1.5 rounded-lg shadow-sm">
                         <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${STATION_DICT[id] || id}</span>
                         <div class="flex flex-col gap-0.5">
-                            <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                            <button onclick="moveSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                            <button onclick="moveSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === selectedStations.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}" ${index === selectedStations.length - 1 ? 'disabled' : ''}>▼</button>
                         </div>
                     </div>
                 `;
@@ -586,11 +597,11 @@
             document.getElementById('station-search').value = '';
             
             for (const [groupName, stations] of Object.entries(STATION_GROUPS)) {
-                let html = `<div class="group-container"><h4 class="text-blue-600 dark:text-[#64d2ff] font-bold text-sm mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/60">${groupName}</h4><div class="grid grid-cols-2 gap-2">`;
+                let html = `<div class="group-container"><h4 class="text-blue-600 dark:text-[#64d2ff] font-bold text-sm mb-2 pb-1 border-b border-gray-200 dark:border-gray-700/60">${groupName}</h4><div class="space-y-2">`;
                 for (const [id, name] of Object.entries(stations)) {
                     const isChecked = selectedStations.includes(id) ? 'checked' : '';
                     html += `
-                        <label class="station-item flex items-center justify-between p-2.5 bg-white dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer shadow-sm" data-name="${name}" data-id="${id}">
+                        <label class="station-item flex items-center justify-between p-2.5 bg-white dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] cursor-pointer" data-name="${name.toLowerCase()}" data-id="${id}">
                             <span class="text-sm font-bold text-gray-800 dark:text-white truncate pr-1">${name} <span class="text-gray-500 text-[10px] ml-0.5">(${id})</span></span>
                             <input type="checkbox" value="${id}" class="w-4 h-4 accent-blue-600 rounded flex-shrink-0" onchange="toggleStationSelection('${id}', this.checked)" ${isChecked}>
                         </label>`;
@@ -649,11 +660,11 @@
             document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
             if (kmbSelected.length === 0) {
-                container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
+                container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線。</div>';
                 return;
             }
 
-            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
+            container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800 text-gray-500 text-xs">載入中...</div>`).join('');
 
             kmbSelected.forEach(async (item, i) => {
                 const html = await buildBusCardHtml(item);
@@ -850,7 +861,7 @@
                     <div class="space-y-2">
                 `;
 
-                stopData.data.forEach(stopObj => {
+                stopData.data.forEach((stopObj, stopIndex) => {
                     const stopName = kmbStopsDict[stopObj.stop] || stopObj.stop;
                     const idStr = `${routeCode}_${r.bound}_${r.service_type}_${stopObj.stop}`;
                     const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
@@ -867,9 +878,9 @@
                     }));
 
                     html += `
-                        <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                        <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] cursor-pointer">
                             <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
-                                <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stopObj.seq}</span>
+                                <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stopIndex + 1}</span>
                                 ${stopName}
                             </span>
                             <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#ff453a] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
@@ -963,9 +974,9 @@
                             }));
 
                             stopsHtml += `
-                                <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                                <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] cursor-pointer">
                                     <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
-                                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stopObj.stop_seq || ''}</span>
+                                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stops.indexOf(stopObj) + 1}</span>
                                         ${stopName}
                                     </span>
                                     <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#34c759] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
@@ -999,19 +1010,13 @@
                 return;
             }
             kmbSelected.forEach((item, index) => {
-                const isGmb = item.company === 'gmb';
-                const badgeBorder = isGmb ? 'border-green-200 dark:border-[#34c759]/40' : 'border-red-200 dark:border-red-500/30';
-                const routeColor = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
-
                 list.innerHTML += `
-                    <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold text-gray-800 dark:text-gray-100"><span class="${routeColor} mr-1">${item.route}</span>${item.stopName}</span>
-                            <span class="text-[9px] text-gray-500">往 ${item.dest}</span>
-                        </div>
-                        <div class="flex flex-col gap-0.5 ml-1">
-                            <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}">▲</button>
-                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}">▼</button>
+                    <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border border-red-200 dark:border-red-500/40 px-2 py-1.5 rounded-lg shadow-sm">
+                        <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${item.route}</span>
+                        <span class="text-xs text-gray-600 dark:text-gray-400 truncate">${item.stopName}</span>
+                        <div class="flex flex-col gap-0.5 ml-auto">
+                            <button onclick="moveKmbSort(${index}, -1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === 0 ? 'opacity-20 cursor-not-allowed' : ''}" ${index === 0 ? 'disabled' : ''}>▲</button>
+                            <button onclick="moveKmbSort(${index}, 1)" class="sort-btn text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white ${index === kmbSelected.length - 1 ? 'opacity-20 cursor-not-allowed' : ''}" ${index === kmbSelected.length - 1 ? 'disabled' : ''}>▼</button>
                         </div>
                     </div>
                 `;
@@ -1028,37 +1033,39 @@
         }
 
         function openKmbSettings() {
+            const modal = document.getElementById('kmb-settings-modal');
             renderKmbSortList();
             document.getElementById('kmb-route-input').value = '';
             document.getElementById('gmb-route-input').value = '';
-            document.getElementById('kmb-route-results').innerHTML = '';
             document.getElementById('kmb-search-status').innerText = '';
+            document.getElementById('kmb-route-results').innerHTML = '';
             switchBusTab('kmb');
-            document.getElementById('kmb-settings-modal').classList.remove('hidden');
-            document.getElementById('kmb-settings-modal').classList.add('flex');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
         }
 
         function closeKmbSettings() {
-            localStorage.setItem('kmbStations', JSON.stringify(kmbSelected)); 
-            document.getElementById('kmb-settings-modal').classList.add('hidden');
-            document.getElementById('kmb-settings-modal').classList.remove('flex');
+            localStorage.setItem('kmbStations', JSON.stringify(kmbSelected));
+            document.getElementById('kmb-settings-modal').classList.add('hidden'); document.getElementById('kmb-settings-modal').classList.remove('flex');
             fetchKMBData();
         }
 
         // ================= 初始化 =================
-        window.onload = () => {
-            updateAccordionUI(); 
+        window.addEventListener('DOMContentLoaded', () => {
             fetchWeather();
-            fetchTrafficNews(); 
+            fetchTrafficNews();
             renderLrtTags();
             fetchLRTData();
             fetchKMBData();
-            
-            setInterval(fetchWeather, 3 * 60 * 1000);
-            setInterval(fetchTrafficNews, 60 * 1000); 
-            setInterval(fetchLRTData, 30 * 1000);
-            setInterval(fetchKMBData, 30 * 1000);
-        };
+            setInterval(fetchWeather, 600000);
+            setInterval(fetchTrafficNews, 300000);
+            setInterval(fetchLRTData, 30000);
+            setInterval(fetchKMBData, 30000);
+            updateAccordionUI();
+        });
     </script>
+
+    <footer>
+        <p>Created by Jason</p>
+    </footer>
 </body>
 </html>
