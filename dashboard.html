@@ -11,8 +11,7 @@
         tailwind.config = {
             darkMode: 'class',
         }
-        // 防止頁面閃爍，在載入前優先套用主題
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -1060,9 +1059,10 @@
             setInterval(fetchKMBData, 30 * 1000);
         };
     </script>
-   <footer>
-        <p>Created by Jason</p>
+       <footer>
+        <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
+        <center> ... </center>
+        <center><p>Created by Jason</p></div>
     </footer>
-    
 </body>
 </html>
