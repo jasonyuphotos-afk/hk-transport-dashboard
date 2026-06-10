@@ -97,6 +97,10 @@ function openSettings() {
 
 function closeSettings() {
     if (selectedStations.length === 0) { alert("請至少選擇一個車站！"); return; }
+    
+    // 【新增】如果正在放大排序，自動先縮小還原狀態
+    if (document.getElementById('lrt-sort-section').classList.contains('fixed')) { toggleExpandSort('lrt'); }
+    
     localStorage.setItem('lrtStations', JSON.stringify(selectedStations)); 
     if (!selectedStations.includes(currentStationId)) currentStationId = selectedStations[0];
     document.getElementById('settings-modal').classList.add('hidden'); document.getElementById('settings-modal').classList.remove('flex');
@@ -139,6 +143,9 @@ function openKmbSettings() {
 }
 
 function closeKmbSettings() {
+    // 【新增】如果正在放大排序，自動先縮小還原狀態
+    if (document.getElementById('kmb-sort-section').classList.contains('fixed')) { toggleExpandSort('kmb'); }
+    
     localStorage.setItem('kmbStations', JSON.stringify(kmbSelected)); 
     document.getElementById('kmb-settings-modal').classList.add('hidden');
     document.getElementById('kmb-settings-modal').classList.remove('flex');
@@ -270,4 +277,35 @@ function showSystemStatus(msg, lightColor, darkColor) {
     const statusDiv = document.getElementById('system-status-msg');
     statusDiv.innerText = msg;
     statusDiv.style.color = document.documentElement.classList.contains('dark') ? darkColor : lightColor;
+}
+// ================= 排序視窗放大/縮小控制 =================
+function toggleExpandSort(type) {
+    const sectionId = type === 'lrt' ? 'lrt-sort-section' : 'kmb-sort-section';
+    const listId = type === 'lrt' ? 'selected-sort-list' : 'kmb-selected-sort-list';
+    const btnId = type === 'lrt' ? 'lrt-sort-expand-btn' : 'kmb-sort-expand-btn';
+    
+    const section = document.getElementById(sectionId);
+    const list = document.getElementById(listId);
+    const btn = document.getElementById(btnId);
+    
+    const isExpanded = section.classList.contains('fixed');
+    
+    if (!isExpanded) {
+        // 進入全螢幕放大排序模式
+        section.className = "fixed inset-0 z-50 bg-white dark:bg-[#1c1c1e] p-5 flex flex-col h-full rounded-none m-0 animate-fade-in";
+        list.className = "flex flex-wrap content-start gap-2 p-3 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 flex-1 overflow-y-auto scroll-area mt-3 shadow-inner";
+        btn.innerText = "縮小 ✖️";
+        btn.className = "text-[11px] text-red-600 dark:text-red-400 font-bold px-3 py-1 bg-red-100 dark:bg-red-500/20 rounded-full active:scale-95 transition-transform shadow-sm";
+    } else {
+        // 還原原本的精簡嵌入排版
+        if (type === 'lrt') {
+            section.className = "mb-4 flex-shrink-0 flex flex-col transition-all";
+            list.className = "flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[120px] overflow-y-auto scroll-area";
+        } else {
+            section.className = "mb-4 flex-shrink-0 flex flex-col transition-all";
+            list.className = "flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area";
+        }
+        btn.innerText = "放大 🔍";
+        btn.className = "text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform";
+    }
 }
