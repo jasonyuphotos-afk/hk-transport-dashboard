@@ -1,5 +1,7 @@
 Transport Dashboard 
-- Weather + Transport Special News
-- LRT + KMB + GMB
 
-build 20260610.a
+Function:
+- Weather + Traffic Special News
+- LRT + KMB + GMB routes time
+
+Build 20260610.a
