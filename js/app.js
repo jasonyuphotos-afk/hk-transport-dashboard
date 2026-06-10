@@ -499,10 +499,10 @@
                 return `
                 <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
                     <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
-                        <div class="${bgColorClass} text-white font-bold text-sm px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
+                        <div class="${bgColorClass} text-white font-bold text-xl px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
                         <div class="flex flex-col leading-tight overflow-hidden">
-                            <span class="text-gray-900 dark:text-white font-bold text-[11px] truncate">${item.stopName}</span>
-                            <span class="text-gray-500 dark:text-gray-400 text-[9px] truncate">往 ${item.dest}</span>
+                            <span class="text-gray-1200 dark:text-white font-bold text-[13px] truncate">往 ${item.dest}</span>
+                            <span class="text-gray-500 dark:text-gray-400 text-[10px] truncate">${item.stopName}</span>
                         </div>
                     </div>
                     ${renderRow('下一班', eta1)}
