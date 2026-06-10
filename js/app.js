@@ -98,8 +98,8 @@ function openSettings() {
 function closeSettings() {
     if (selectedStations.length === 0) { alert("請至少選擇一個車站！"); return; }
     
-    // 【新增】如果正在放大排序，自動先縮小還原狀態
-    if (document.getElementById('lrt-sort-section').classList.contains('fixed')) { toggleExpandSort('lrt'); }
+    // 【修改】將 contains('fixed') 改為 contains('absolute')
+    if (document.getElementById('lrt-sort-section').classList.contains('absolute')) { toggleExpandSort('lrt'); }
     
     localStorage.setItem('lrtStations', JSON.stringify(selectedStations)); 
     if (!selectedStations.includes(currentStationId)) currentStationId = selectedStations[0];
@@ -143,8 +143,8 @@ function openKmbSettings() {
 }
 
 function closeKmbSettings() {
-    // 【新增】如果正在放大排序，自動先縮小還原狀態
-    if (document.getElementById('kmb-sort-section').classList.contains('fixed')) { toggleExpandSort('kmb'); }
+    // 【修改】將 contains('fixed') 改為 contains('absolute')
+    if (document.getElementById('kmb-sort-section').classList.contains('absolute')) { toggleExpandSort('kmb'); }
     
     localStorage.setItem('kmbStations', JSON.stringify(kmbSelected)); 
     document.getElementById('kmb-settings-modal').classList.add('hidden');
@@ -288,11 +288,12 @@ function toggleExpandSort(type) {
     const list = document.getElementById(listId);
     const btn = document.getElementById(btnId);
     
-    const isExpanded = section.classList.contains('fixed');
+    // 【修改 1】將判斷條件從 'fixed' 改為 'absolute'
+    const isExpanded = section.classList.contains('absolute');
     
     if (!isExpanded) {
-        // 進入全螢幕放大排序模式
-        section.className = "fixed inset-0 z-50 bg-white dark:bg-[#1c1c1e] p-5 flex flex-col h-full rounded-none m-0 animate-fade-in";
+        // 【修改 2】把 fixed 改為 absolute 避開 Safari Bug，加入 pt-12 避開瀏海，並用 h-[100dvh]
+        section.className = "absolute inset-0 z-50 bg-white dark:bg-[#1c1c1e] p-5 pt-12 flex flex-col h-[100dvh] rounded-none m-0 animate-fade-in";
         list.className = "flex flex-wrap content-start gap-2 p-3 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 flex-1 overflow-y-auto scroll-area mt-3 shadow-inner";
         btn.innerText = "縮小 ✖️";
         btn.className = "text-[11px] text-red-600 dark:text-red-400 font-bold px-3 py-1 bg-red-100 dark:bg-red-500/20 rounded-full active:scale-95 transition-transform shadow-sm";
