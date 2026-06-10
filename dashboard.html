@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>交通實時看板</title>
+    <title>Traffic Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -63,7 +63,10 @@
 </head>
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
-    <div class="absolute top-3 right-4 z-10">
+    <div class="absolute top-3 right-4 z-10 flex gap-2">
+        <button onclick="openSystemSettings()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors" title="系統設定">
+            ⚙️
+        </button>
         <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors">
             <span id="theme-icon"></span>
         </button>
@@ -76,10 +79,16 @@
         <div class="bg-gradient-to-b from-blue-50 to-white dark:from-[#1c2a3d] dark:to-[#121a2f] rounded-2xl p-4 border border-blue-100 dark:border-gray-700 shadow-lg relative transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
-                <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform mr-10" onclick="openWarningModal()">
-                    <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
-                        ⚠️ 警告生效
-                    </span>
+                
+                <div class="flex items-center gap-2">
+                    <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
+                        <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
+                            ⚠️ 警告生效
+                        </span>
+                    </div>
+                    <div class="bg-white/60 dark:bg-[#3a3a3c] border border-gray-200 dark:border-gray-700/50 px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchWeather(); event.stopPropagation();">
+                        <span id="weather-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
+                    </div>
                 </div>
             </div>
             
@@ -91,11 +100,13 @@
                         <span class="text-lg leading-none mt-1 ml-0.5 text-gray-900 dark:text-white">°C</span>
                     </div>
                     <div class="text-3xl my-2" id="weather-icon">☁️</div>
+                    <div class="text-[10px] font-bold text-gray-800 dark:text-white" id="weather-min-max"> --°C /  --°C</div>
                     <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
                         <div>濕度 --%</div>
+                        
                     </div>
                 </div>
-                <div class="flex-1 space-y-3 h-[130px] overflow-y-auto pl-1 pr-2 scroll-area">
+                <div class="flex-1 space-y-3 h-[150px] overflow-y-auto pl-1 pr-2 scroll-area">
                     <div>
                         <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">現時天氣</div>
                         <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-desc">載入中...</div>
@@ -242,7 +253,32 @@
             <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
         </div>
     </div>
+<div id="system-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeSystemSettings()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-blue-500/40 shadow-2xl relative flex flex-col" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
+                <h3 class="text-blue-600 dark:text-[#64d2ff] text-lg font-bold flex items-center gap-2">⚙️ 系統設定</h3>
+                <button onclick="closeSystemSettings()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="space-y-4 flex-1">
+                <div>
+                    <h4 class="font-bold text-sm text-gray-900 dark:text-white mb-2">匯出設定 (備份)</h4>
+                    <button onclick="exportSettings()" class="w-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500 font-bold py-2 rounded-xl active:bg-blue-200 dark:active:bg-blue-500/40 transition-colors text-sm">產生備份文字</button>
+                </div>
+                
+                <div class="relative">
+                    <textarea id="backup-text-area" class="w-full h-28 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white p-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-blue-500 text-[10px] font-mono break-all resize-none leading-relaxed" placeholder="備份文字會顯示在這裡... 或是直接在此貼上備份來還原"></textarea>
+                    <button onclick="copyBackupText()" id="copy-btn" class="absolute right-2 top-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2.5 py-1 rounded-md text-[10px] font-bold hidden active:scale-95 transition-transform">複製</button>
+                </div>
 
+                <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <h4 class="font-bold text-sm text-gray-900 dark:text-white mb-2">匯入設定 (還原)</h4>
+                    <button onclick="importSettings()" class="w-full bg-[#34c759]/20 text-[#34c759] font-bold py-2 rounded-xl active:bg-[#34c759]/40 transition-colors text-sm">從文字框還原設定</button>
+                </div>
+                <div id="system-status-msg" class="text-center text-xs font-bold h-4"></div>
+            </div>
+        </div>
+    </div>
     <script>
         // ================= 顯示與主題控制 =================
         function updateThemeIcon() {
@@ -342,6 +378,11 @@
         updateClock();
 
         async function fetchWeather() {
+            
+           const now = new Date();
+            document.getElementById('weather-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            // ---------------------------------------------
+            
             try {
                 const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
                 const data = await res.json();
@@ -380,6 +421,13 @@
                 const fndRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
                 const fndData = await fndRes.json();
                 if (fndData.generalSituation) document.getElementById('weather-outlook').innerText = fndData.generalSituation;
+                // --- 補上這段代碼：讀取今日最高/最低氣溫 ---
+                if (fndData.weatherForecast && fndData.weatherForecast.length > 0) {
+                    const today = fndData.weatherForecast[0];
+                    const minTemp = today.forecastMintemp.value;
+                    const maxTemp = today.forecastMaxtemp.value;
+                    document.getElementById('weather-min-max').innerText = ` ${minTemp}°C /  ${maxTemp}°C`;
+                }
                 
             } catch (err) { console.error("天氣 API 錯誤", err); }
         }
@@ -1058,11 +1106,122 @@
             setInterval(fetchLRTData, 30 * 1000);
             setInterval(fetchKMBData, 30 * 1000);
         };
+        // ================= 系統備份與還原功能 =================
+        const DASHBOARD_VERSION = "1.0"; // 設定當前版本
+
+        function openSystemSettings() {
+            const modal = document.getElementById('system-settings-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            document.getElementById('backup-text-area').value = '';
+            document.getElementById('copy-btn').classList.add('hidden');
+            document.getElementById('system-status-msg').innerText = '';
+        }
+
+        function closeSystemSettings() {
+            const modal = document.getElementById('system-settings-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        function exportSettings() {
+            const data = {
+                lrtStations: localStorage.getItem('lrtStations') ? JSON.parse(localStorage.getItem('lrtStations')) : [],
+                kmbStations: localStorage.getItem('kmbStations') ? JSON.parse(localStorage.getItem('kmbStations')) : [],
+                theme: localStorage.getItem('theme') || 'light'
+            };
+            
+            const base64Data = btoa(encodeURIComponent(JSON.stringify(data)));
+            
+            const now = new Date();
+            const dateString = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            const backupString = `[備份日期: ${dateString}]\n[版本: ${DASHBOARD_VERSION}]\n--請複製以下整段文字--\n${base64Data}`;
+            
+            const textArea = document.getElementById('backup-text-area');
+            textArea.value = backupString;
+            document.getElementById('copy-btn').classList.remove('hidden');
+            
+            showSystemStatus('備份文字已產生！請點擊複製。', '#0a60ff', '#64d2ff');
+        }
+
+        function copyBackupText() {
+            const textArea = document.getElementById('backup-text-area');
+            textArea.select();
+            document.execCommand('copy');
+            showSystemStatus('✅ 已複製到剪貼簿！可以去 WhatsApp 貼上', '#34c759', '#34c759');
+        }
+
+        function importSettings() {
+            const textArea = document.getElementById('backup-text-area');
+            const text = textArea.value.trim();
+            
+            if (!text) {
+                showSystemStatus('❌ 請先在上方貼上備份文字！', '#ff453a', '#ff453a');
+                return;
+            }
+            
+            try {
+                const lines = text.split('\n');
+                let base64String = '';
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    if (lines[i].trim() !== '' && !lines[i].startsWith('[')) {
+                        base64String = lines[i].trim();
+                        break;
+                    }
+                }
+
+                if (!base64String) throw new Error("找不到有效的設定資料");
+
+                const decodedData = JSON.parse(decodeURIComponent(atob(base64String)));
+                
+                if (decodedData.lrtStations) {
+                    localStorage.setItem('lrtStations', JSON.stringify(decodedData.lrtStations));
+                    selectedStations = decodedData.lrtStations;
+                    if (selectedStations.length > 0) currentStationId = selectedStations[0];
+                }
+                
+                if (decodedData.kmbStations) {
+                    localStorage.setItem('kmbStations', JSON.stringify(decodedData.kmbStations));
+                    kmbSelected = decodedData.kmbStations;
+                }
+                
+                if (decodedData.theme) {
+                    localStorage.setItem('theme', decodedData.theme);
+                    if (decodedData.theme === 'dark') document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                    updateThemeIcon();
+                }
+
+                showSystemStatus('✅ 設定還原成功！正在重新載入...', '#34c759', '#34c759');
+                
+                  setTimeout(() => {
+                    renderLrtTags();
+                    fetchLRTData();
+                    fetchKMBData();
+                    closeSystemSettings();
+                }, 1500);
+
+            } catch (e) {
+                console.error(e);
+                showSystemStatus('❌ 還原失敗：備份文字格式不正確或已損毀！', '#ff453a', '#ff453a');
+            }
+        }
+
+        function showSystemStatus(msg, lightColor, darkColor) {
+            const statusDiv = document.getElementById('system-status-msg');
+            statusDiv.innerText = msg;
+            statusDiv.style.color = document.documentElement.classList.contains('dark') ? darkColor : lightColor;
+        }
     </script>
        <footer>
         <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
         <center> ... </center>
-        <center><p>Created by Jason</p></div>
+        <center><p>Created by Jason | Build 20260610a</p></div>
     </footer>
 </body>
 </html>
