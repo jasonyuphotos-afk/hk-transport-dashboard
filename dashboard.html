@@ -169,10 +169,13 @@
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
                 <button onclick="closeSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
             </div>
-            <div class="mb-4 flex-shrink-0">
-                <h4 class="text-[#ff9f0a] font-bold text-[11px] mb-2 tracking-wide">已選車站排序 (點擊箭頭調整首頁順序)</h4>
-                <div id="selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px]"></div>
+    <div id="lrt-sort-section" class="mb-4 flex-shrink-0 flex flex-col transition-all">
+        <div class="flex justify-between items-center mb-2 tracking-wide">
+            <h4 class="text-[#ff9f0a] font-bold text-[11px]">已選車站排序 (點擊箭頭調整首頁順序)</h4>
+                <button type="button" onclick="toggleExpandSort('lrt')" id="lrt-sort-expand-btn" class="text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform">放大 🔍</button>
             </div>
+    <div id="selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[120px] overflow-y-auto scroll-area"></div>
+</div>
             <div class="mb-4 flex-shrink-0 relative">
                 <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
                 <input type="text" id="station-search" oninput="filterStations()" placeholder="搜尋車站名稱或代碼..." class="w-full bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-blue-500 text-sm">
@@ -187,11 +190,13 @@
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定巴士路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
                 <button onclick="closeKmbSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
             </div>
-            <div class="mb-4 flex-shrink-0">
-                <h4 class="text-[#ff453a] font-bold text-[11px] mb-2 tracking-wide">已選站點排序 (點擊箭頭調整首頁順序)</h4>
-                <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
-            </div>
-            
+<div id="kmb-sort-section" class="mb-4 flex-shrink-0 flex flex-col transition-all">
+    <div class="flex justify-between items-center mb-2 tracking-wide">
+        <h4 class="text-[#ff453a] font-bold text-[11px]">已選站點排序 (點擊箭頭調整首頁順序)</h4>
+        <button type="button" onclick="toggleExpandSort('kmb')" id="kmb-sort-expand-btn" class="text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform">放大 🔍</button>
+    </div>
+    <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
+</div>            
             <div class="mb-3 flex-shrink-0 flex border-b border-gray-200 dark:border-gray-700">
                 <button id="tab-kmb" onclick="switchBusTab('kmb')" class="flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors">九巴</button>
                 <button id="tab-gmb" onclick="switchBusTab('gmb')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">專線小巴</button>
