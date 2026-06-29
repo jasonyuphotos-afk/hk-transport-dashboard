@@ -39,3 +39,16 @@
         .dark .sort-btn { background: #3a3a3c; }
         .sort-btn:active { background: #d1d5db; }
         .dark .sort-btn:active { background: #5a5a5c; }
+/* 屯門公路轉車站 Popup */
+.tm-route-row {
+    transition: background-color 0.15s;
+}
+.tm-route-row:active {
+    background-color: rgba(0,0,0,0.03);
+}
+.dark .tm-route-row:active {
+    background-color: rgba(255,255,255,0.05);
+}
+#mtr-platforms-container, #kmb-container {
+    min-height: 150px;
+}

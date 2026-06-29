@@ -21,6 +21,51 @@ localStorage.setItem('lrtStations', JSON.stringify(selectedStations));
 
 let fullTrafficText = "";
 
+// ================= 港鐵資料區 (全綫聯網版) =================
+const MTR_LINES = {
+    'TML': { name: '屯馬綫', color: '#9a3b26' },
+    'TWL': { name: '荃灣綫', color: '#e2231a' },
+    'KTL': { name: '觀塘綫', color: '#00a185' },
+    'ISL': { name: '港島綫', color: '#0071ce' },
+    'EAL': { name: '東鐵綫', color: '#61b4e4' },
+    'TKL': { name: '將軍澳綫', color: '#a35eb5' },
+    'TCL': { name: '東涌綫', color: '#f68f26' },
+    'SIL': { name: '南港島綫', color: '#b6bd00' },
+    'AEL': { name: '機場快綫', color: '#007078' }
+};
+
+const MTR_STATIONS_BY_LINE = {
+    "TML": { "TUM": "屯門", "SIH": "兆康", "TIS": "天水圍", "LOP": "朗屏", "YUL": "元朗", "KSR": "錦上路", "TWW": "荃灣西", "MEF": "美孚", "NAC": "南昌", "AUS": "柯士甸", "ETS": "尖東", "HUH": "紅磡", "HOM": "何文田", "TKW": "土瓜灣", "SUW": "宋皇臺", "DIH": "鑽石山", "HIK": "顯徑", "TAW": "大圍", "CKT": "車公廟", "STW": "沙田圍", "CIO": "第一城", "SHM": "石門", "TSH": "大水坑", "MOS": "馬鞍山", "HEA": "恆安", "WKS": "烏溪沙" },
+    "TWL": { "CEN": "中環", "ADM": "金鐘", "TST": "尖沙咀", "JOR": "佐敦", "YMT": "油麻地", "MOK": "旺角", "PRE": "太子", "SSP": "深水埗", "CSW": "長沙灣", "LCK": "荔枝角", "MEF": "美孚", "LAK": "荔景", "KWF": "葵芳", "KWH": "葵興", "TSW": "荃灣" },
+    "KTL": { "WHA": "黃埔", "HOM": "何文田", "YMT": "油麻地", "MOK": "旺角", "PRE": "太子", "SKM": "石硤尾", "KOT": "九龍塘", "LOF": "樂富", "WTS": "黃大仙", "DIH": "鑽石山", "CHH": "彩虹", "KOB": "九龍灣", "NTK": "牛頭角", "KWT": "觀塘", "LAT": "藍田", "YAT": "油塘", "TIK": "調景嶺" },
+    "ISL": { "KET": "堅尼地城", "HKU": "香港大學", "SYP": "西營盤", "SHW": "上環", "CEN": "中環", "ADM": "金鐘", "WAC": "灣仔", "CAB": "銅鑼灣", "TIN": "天后", "FOT": "炮台山", "NOP": "北角", "QUO": "鰂魚涌", "TAK": "太古", "SWA": "西灣河", "SKW": "筲箕灣", "HFC": "杏花邨", "CHW": "柴灣" },
+    "EAL": { "ADM": "金鐘", "EXC": "會展", "HUH": "紅磡", "MKK": "旺角東", "KOT": "九龍塘", "TAW": "大圍", "SHT": "沙田", "FOT": "火炭", "RAC": "馬場", "UNI": "大學", "TAP": "大埔墟", "TWO": "太和", "FAN": "粉嶺", "SHS": "上水", "LOW": "羅湖", "LMC": "落馬洲" },
+    "TKL": { "NOP": "北角", "QUO": "鰂魚涌", "YAT": "油塘", "TIK": "調景嶺", "TKO": "將軍澳", "HAO": "坑口", "POA": "寶琳", "LHP": "康城" },
+    "TCL": { "HOK": "香港", "KOW": "九龍", "OLY": "奧運", "NAC": "南昌", "LAK": "荔景", "TSY": "青衣", "SUN": "欣澳", "TUC": "東涌" },
+    "SIL": { "ADM": "金鐘", "OCP": "海洋公園", "WCH": "黃竹坑", "LET": "利東", "SOH": "海怡半島" },
+    "AEL": { "HOK": "香港", "KOW": "九龍", "TSY": "青衣", "AIR": "機場", "AWE": "博覽館" }
+};
+
+const MTR_STA_DICT = {};
+const MTR_STA_LINES = {};
+for (const [line, stations] of Object.entries(MTR_STATIONS_BY_LINE)) {
+    for (const [sta, name] of Object.entries(stations)) {
+        MTR_STA_DICT[sta] = name;
+        if (!MTR_STA_LINES[sta]) MTR_STA_LINES[sta] = [];
+        MTR_STA_LINES[sta].push(line);
+    }
+}
+
+const MTR_DEST_DICT = { 'WKS': '烏溪沙', 'TUM': '屯門', 'TSW': '荃灣', 'CEN': '中環', 'TIK': '調景嶺', 'WHA': '黃埔', 'CHW': '柴灣', 'KET': '堅尼地城', 'LOW': '羅湖', 'LMC': '落馬洲', 'ADM': '金鐘', 'POA': '寶琳', 'LHP': '康城', 'NOP': '北角', 'TUC': '東涌', 'HOK': '香港', 'SOH': '海怡半島', 'AWE': '博覽館', 'SHS': '上水', 'TAP': '大埔墟', 'FOT': '火炭', 'MOK': '旺角', 'TSY': '青衣', 'HUH': '紅磡', };
+
+let savedMtrStations = JSON.parse(localStorage.getItem('mtrStations'));
+if (savedMtrStations && savedMtrStations.length > 0 && savedMtrStations[0].includes('-')) {
+    savedMtrStations = [...new Set(savedMtrStations.map(s => s.split('-')[1]))];
+    localStorage.setItem('mtrStations', JSON.stringify(savedMtrStations));
+}
+let selectedMtrStations = (savedMtrStations && savedMtrStations.length > 0) ? savedMtrStations : ['TUM', 'SIH', 'TWW'];
+let currentMtrStationId = selectedMtrStations[0];
+
 // ================= 九巴/小巴資料區 =================
 let kmbStopsDict = {}; 
 let gmbStopsDict = {}; 
@@ -164,6 +209,8 @@ async function fetchLRTData() {
     const now = new Date();
     document.getElementById('lrt-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+    container.classList.add('opacity-50', 'transition-opacity');
+
     try {
         const res = await fetch(`https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${currentStationId}`);
         const data = await res.json();
@@ -171,6 +218,7 @@ async function fetchLRTData() {
 
         if (data.status !== 1 || !data.platform_list || data.platform_list.length === 0) {
             container.innerHTML = '<div class="text-xs text-red-400 col-span-2 py-2 text-center">目前沒有班次資料或暫停服務。</div>';
+            container.classList.remove('opacity-50');
             return;
         }
 
@@ -229,7 +277,11 @@ async function fetchLRTData() {
             platformHtml += `</div></div>`;
             container.innerHTML += platformHtml;
         });
-    } catch (err) { container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center">無法連接網路，請稍後再試。</div>'; }
+        container.classList.remove('opacity-50');
+    } catch (err) { 
+        container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center">無法連接網絡，請稍後再試。</div>';
+        container.classList.remove('opacity-50');
+    }
 }
 
 function renderSortList() {
@@ -280,6 +332,111 @@ function filterStations() {
     });
 }
 
+// ================= 港鐵邏輯 =================
+function renderMtrTags() {
+    const container = document.getElementById('mtr-tags-container');
+    container.innerHTML = '';
+    selectedMtrStations.forEach(id => {
+        const isActive = id === currentMtrStationId;
+        const btnClass = isActive ? 'bg-[#ea2227] text-white border-[#ea2227]' : 'bg-white dark:bg-[#1c1c1e] text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700';
+        const btn = document.createElement('button');
+        btn.className = `px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0 border ${btnClass}`;
+        btn.innerText = MTR_STA_DICT[id] || id;
+        btn.onclick = () => { currentMtrStationId = id; renderMtrTags(); fetchMTRData(); };
+        container.appendChild(btn);
+    });
+}
+
+async function fetchMTRData() {
+    if(!currentMtrStationId) return;
+    document.getElementById('mtr-current-station-name').innerText = `${MTR_STA_DICT[currentMtrStationId] || '未知'}站`;
+    const container = document.getElementById('mtr-platforms-container');
+    const now = new Date();
+    document.getElementById('mtr-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const lines = MTR_STA_LINES[currentMtrStationId];
+    if(!lines) return;
+
+    container.classList.add('opacity-50', 'transition-opacity');
+
+    try {
+        let allData = [];
+        await Promise.all(lines.map(async (line) => {
+            try {
+                const res = await fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${line}&sta=${currentMtrStationId}`);
+                const data = await res.json();
+                if (data.status === 1 && data.data && data.data[`${line}-${currentMtrStationId}`]) {
+                    allData.push({ line, data: data.data[`${line}-${currentMtrStationId}`] });
+                }
+            } catch(e) { console.error(e); }
+        }));
+
+        if (allData.length === 0) {
+            container.innerHTML = '<div class="text-xs text-red-400 col-span-2 py-4 text-center">目前沒有班次資料或暫停服務。</div>';
+            container.classList.remove('opacity-50');
+            return;
+        }
+
+        allData.sort((a, b) => lines.indexOf(a.line) - lines.indexOf(b.line));
+
+        let html = '';
+        allData.forEach(({line, data}) => {
+            const lineInfo = MTR_LINES[line];
+            const directions = ['UP', 'DOWN'];
+            directions.forEach(dir => {
+                if (data[dir] && data[dir].length > 0) {
+                    const trains = data[dir];
+                    const plat = trains[0].plat;
+                    
+                    let platformHtml = `
+                    <div class="bg-white dark:bg-[#1c1c1e] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
+                        <div class="p-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-800" style="background-color: ${lineInfo.color}15;">
+                            <div class="flex items-center gap-1.5">
+                                <div class="text-white px-2 py-0.5 rounded font-black text-[12px] tracking-wider" style="background-color: ${lineInfo.color};">${plat}</div>
+                                <span class="text-[11px] font-bold text-gray-700 dark:text-gray-200">月台</span>
+                            </div>
+                            <div class="text-white px-2 py-0.5 rounded shadow-sm font-black text-[11px] tracking-wider" style="background-color: ${lineInfo.color};">${lineInfo.name}</div>
+                        </div>
+                        <div class="p-2 space-y-2 flex-grow">
+                    `;
+
+                    trains.slice(0, 3).forEach((route, index) => {
+                        let minsVal = route.ttnt;
+                        const isArriving = minsVal === "0" || minsVal === "";
+                        
+                        const timeValueStr = isArriving 
+    ? `<span class="text-[#ff453a] font-black text-[20px] tracking-tighter">即將抵達</span>` 
+    : `<span class="text-[#ff453a] font-black text-[20px]">${minsVal}</span><span class="text-gray-500 dark:text-gray-400 font-bold text-[11px] ml-0.5">分鐘</span>`;
+                            
+                        const borderTopClass = index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-2 mt-2' : '';
+                        const destName = MTR_DEST_DICT[route.dest] || route.dest;
+                        const exactTime = route.time.substring(11, 16);
+
+                        platformHtml += `
+                        <div class="flex justify-between items-end ${borderTopClass}">
+                            <div class="flex-1 truncate pr-1">
+                                <div class="text-[9px] text-gray-400 dark:text-gray-500 font-bold tracking-widest uppercase mb-0.5">往</div>
+                                <div class="text-[12px] text-gray-800 dark:text-gray-100 font-bold truncate leading-none">${destName}</div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="leading-none">${timeValueStr}</div>
+                                <div class="text-[9px] text-gray-400 dark:text-gray-500 mt-1">${exactTime}</div>
+                            </div>
+                        </div>`;
+                    });
+                    platformHtml += `</div></div>`;
+                    html += platformHtml;
+                }
+            });
+        });
+        container.innerHTML = html;
+        container.classList.remove('opacity-50');
+    } catch (err) { 
+        container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center py-4">無法連接網絡，請稍後再試。</div>';
+        container.classList.remove('opacity-50');
+    }
+}
+
 // ================= 九巴/小巴邏輯 =================
 async function fetchAllKmbStops() {
     if(Object.keys(kmbStopsDict).length > 0) return;
@@ -311,6 +468,8 @@ async function fetchKMBData() {
         return;
     }
 
+    container.classList.add('opacity-50', 'transition-opacity');
+
     container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
 
     kmbSelected.forEach(async (item, i) => {
@@ -318,6 +477,8 @@ async function fetchKMBData() {
         const card = document.getElementById(`bus-card-${i}`);
         if (card) card.outerHTML = html;
     });
+    
+    setTimeout(() => container.classList.remove('opacity-50'), 500);
 }
 
 async function buildBusCardHtml(item) {
