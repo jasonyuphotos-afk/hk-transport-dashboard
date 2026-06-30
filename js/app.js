@@ -125,33 +125,40 @@ function closeSettings() {
     renderLrtTags(); fetchLRTData();
 }
 
+// ================= 巴士設定視窗（包含四種分頁）================
 function switchBusTab(type) {
-    const tabKmb = document.getElementById('tab-kmb');
-    const tabGmb = document.getElementById('tab-gmb');
-    const panelKmb = document.getElementById('search-panel-kmb');
-    const panelGmb = document.getElementById('search-panel-gmb');
+    const tabs = ['kmb', 'ctb', 'mtrbus', 'gmb'];
+    const tabIds = ['tab-kmb', 'tab-ctb', 'tab-mtrbus', 'tab-gmb'];
+    const panelIds = ['search-panel-kmb', 'search-panel-ctb', 'search-panel-mtrbus', 'search-panel-gmb'];
+    const colors = {
+        kmb: { active: '#ff453a', inactive: 'gray-500' },
+        ctb: { active: '#0033a0', inactive: 'gray-500' },
+        mtrbus: { active: '#007078', inactive: 'gray-500' },
+        gmb: { active: '#34c759', inactive: 'gray-500' }
+    };
     const statusEl = document.getElementById('kmb-search-status');
     const container = document.getElementById('kmb-route-results');
-    
     statusEl.innerText = '';
     container.innerHTML = '';
 
-    if (type === 'kmb') {
-        tabKmb.className = "flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors";
-        tabGmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors";
-        panelKmb.classList.remove('hidden');
-        panelGmb.classList.add('hidden');
-    } else {
-        tabGmb.className = "flex-1 py-2 text-sm font-bold text-[#34c759] border-b-2 border-[#34c759] transition-colors";
-        tabKmb.className = "flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors";
-        panelGmb.classList.remove('hidden');
-        panelKmb.classList.add('hidden');
-    }
+    tabs.forEach((t, idx) => {
+        const tabBtn = document.getElementById(tabIds[idx]);
+        const panel = document.getElementById(panelIds[idx]);
+        if (t === type) {
+            tabBtn.className = `flex-1 py-2 text-sm font-bold text-[${colors[t].active}] border-b-2 border-[${colors[t].active}] transition-colors`;
+            panel.classList.remove('hidden');
+        } else {
+            tabBtn.className = `flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors`;
+            panel.classList.add('hidden');
+        }
+    });
 }
 
 function openKmbSettings() {
     renderKmbSortList();
     document.getElementById('kmb-route-input').value = '';
+    document.getElementById('ctb-route-input').value = '';
+    document.getElementById('mtrbus-route-input').value = '';
     document.getElementById('gmb-route-input').value = '';
     document.getElementById('kmb-route-results').innerHTML = '';
     document.getElementById('kmb-search-status').innerText = '';
@@ -244,7 +251,7 @@ function moveMtrSort(index, direction) {
     renderMtrSortList();
 }
 
-// ================= 屯門公路轉車站 Popup 控制 =================
+// ================= 屯門公路轉車站 Popup 控制 (不變) =================
 let tmClCurrentBound = 'outbound';
 let tmclStopIds = { outbound: null, inbound: null };
 
@@ -413,7 +420,7 @@ window.onload = () => {
 };
 
 // ================= 系統備份與還原功能 =================
-const DASHBOARD_VERSION = "1.0";
+const DASHBOARD_VERSION = "1.1";
 
 function openSystemSettings() {
     const modal = document.getElementById('system-settings-modal');
@@ -534,34 +541,6 @@ function showSystemStatus(msg, lightColor, darkColor) {
 }
 
 // ================= 排序視窗放大/縮小控制 =================
-function toggleExpandSort(type) {
-    const sectionId = type === 'lrt' ? 'lrt-sort-section' : 'kmb-sort-section';
-    const listId = type === 'lrt' ? 'selected-sort-list' : 'kmb-selected-sort-list';
-    const btnId = type === 'lrt' ? 'lrt-sort-expand-btn' : 'kmb-sort-expand-btn';
-    
-    const section = document.getElementById(sectionId);
-    const list = document.getElementById(listId);
-    const btn = document.getElementById(btnId);
-    
-    const isExpanded = section.classList.contains('absolute');
-    
-    if (!isExpanded) {
-        section.className = "absolute inset-0 z-50 bg-white dark:bg-[#1c1c1e] p-5 pt-12 flex flex-col h-[100dvh] rounded-none m-0 animate-fade-in";
-        list.className = "flex flex-wrap content-start gap-2 p-3 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 flex-1 overflow-y-auto scroll-area mt-3 shadow-inner";
-        btn.innerText = "縮小 ✖️";
-        btn.className = "text-[11px] text-red-600 dark:text-red-400 font-bold px-3 py-1 bg-red-100 dark:bg-red-500/20 rounded-full active:scale-95 transition-transform shadow-sm";
-    } else {
-        if (type === 'lrt') {
-            section.className = "mb-4 flex-shrink-0 flex flex-col transition-all";
-            list.className = "flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[120px] overflow-y-auto scroll-area";
-        } else {
-            section.className = "mb-4 flex-shrink-0 flex flex-col transition-all";
-            list.className = "flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area";
-        }
-        btn.innerText = "放大 🔍";
-        btn.className = "text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform";
-    }
-}
 function toggleExpandSort(type) {
     const sectionId = type === 'lrt' ? 'lrt-sort-section' : type === 'kmb' ? 'kmb-sort-section' : 'mtr-sort-section';
     const listId = type === 'lrt' ? 'selected-sort-list' : type === 'kmb' ? 'kmb-selected-sort-list' : 'mtr-selected-sort-list';

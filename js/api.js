@@ -66,11 +66,16 @@ if (savedMtrStations && savedMtrStations.length > 0 && savedMtrStations[0].inclu
 let selectedMtrStations = (savedMtrStations && savedMtrStations.length > 0) ? savedMtrStations : ['TUM', 'SIH', 'TWW'];
 let currentMtrStationId = selectedMtrStations[0];
 
-// ================= 九巴/小巴資料區 =================
+// ================= 九巴/小巴/城巴/港鐵巴士資料區 =================
 let kmbStopsDict = {}; 
 let gmbStopsDict = {}; 
 let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
 let kmbRoutesList = []; 
+
+// 城巴／港鐵巴士專用
+let ctbStopCache = new Map();
+let mtrBusStops = [];
+let mtrBusRoutes = {};
 
 // ================= API 數據獲取與處理邏輯 =================
 async function fetchWeather() {
@@ -437,7 +442,50 @@ async function fetchMTRData() {
     }
 }
 
-// ================= 九巴/小巴邏輯 =================
+// ================= 九巴/小巴/城巴/港鐵巴士邏輯 =================
+// ---- 載入港鐵巴士本地 JSON ----
+async function loadMtrBusData() {
+    try {
+        const [stopsRes, routesRes] = await Promise.all([
+            fetch('./data/stops.json'),
+            fetch('./data/routes.json')
+        ]);
+        if (stopsRes.ok) mtrBusStops = await stopsRes.json();
+        if (routesRes.ok) mtrBusRoutes = await routesRes.json();
+        console.log('✅ 港鐵巴士本地資料載入成功');
+        return;
+    } catch (e) { /* 本地失敗，嘗試遠端 */ }
+
+    try {
+        const [stopsRes, routesRes] = await Promise.all([
+            fetch('https://jasonunicorn629-source.github.io/mtr-bus-eta/data/stops.json'),
+            fetch('https://jasonunicorn629-source.github.io/mtr-bus-eta/data/routes.json')
+        ]);
+        if (stopsRes.ok) mtrBusStops = await stopsRes.json();
+        if (routesRes.ok) mtrBusRoutes = await routesRes.json();
+        console.log('✅ 港鐵巴士遠端資料載入成功');
+    } catch (e) {
+        console.warn('⚠️ 港鐵巴士資料載入失敗', e);
+    }
+}
+
+// ---- 城巴站名快取 ----
+async function getCtbStopName(stopId) {
+    if (ctbStopCache.has(stopId)) return ctbStopCache.get(stopId);
+    try {
+        const res = await fetch(`https://rt.data.gov.hk/v2/transport/citybus/stop/${stopId}`);
+        const data = await res.json();
+        const name = { zh: data.data?.name_tc || stopId, en: data.data?.name_en || '' };
+        ctbStopCache.set(stopId, name);
+        return name;
+    } catch {
+        const fallback = { zh: stopId, en: '' };
+        ctbStopCache.set(stopId, fallback);
+        return fallback;
+    }
+}
+
+// ---- 九巴搜尋 ----
 async function fetchAllKmbStops() {
     if(Object.keys(kmbStopsDict).length > 0) return;
     try {
@@ -456,115 +504,6 @@ async function fetchAllKmbRoutes() {
             kmbRoutesList = data.data;
         }
     } catch (e) {}
-}
-
-async function fetchKMBData() {
-    const container = document.getElementById('kmb-container');
-    const now = new Date();
-    document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    if (kmbSelected.length === 0) {
-        container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
-        return;
-    }
-
-    container.classList.add('opacity-50', 'transition-opacity');
-
-    container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
-
-    kmbSelected.forEach(async (item, i) => {
-        const html = await buildBusCardHtml(item);
-        const card = document.getElementById(`bus-card-${i}`);
-        if (card) card.outerHTML = html;
-    });
-    
-    setTimeout(() => container.classList.remove('opacity-50'), 500);
-}
-
-async function buildBusCardHtml(item) {
-    try {
-        let etas = [];
-        const isGmb = item.company === 'gmb';
-        
-        if (isGmb) {
-            const res = await fetch(`https://data.etagmb.gov.hk/eta/stop/${item.stopId}`);
-            if (res.ok) {
-                const json = await res.json();
-                if (json.data) {
-                    const targetRoute = json.data.find(d => d.route_id == item.routeId && d.route_seq == item.dir);
-                    if (targetRoute && targetRoute.eta) {
-                        etas = targetRoute.eta
-                            .filter(d => d.timestamp !== null)
-                            .map(d => ({ eta: d.timestamp }))
-                            .sort((a, b) => new Date(a.eta) - new Date(b.eta));
-                    }
-                }
-            }
-        } else {
-            const serviceType = item.serviceType || '1';
-            const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${item.stopId}/${item.route}/${serviceType}`);
-            const json = await res.json();
-            if(json.data) {
-                etas = json.data
-                    .filter(d => d.dir === item.dir && d.eta !== null)
-                    .sort((a, b) => new Date(a.eta) - new Date(b.eta));
-            }
-        }
-
-        let eta1 = etas[0];
-        let eta2 = etas[1];
-
-        const borderColorClass = isGmb ? 'border-[#34c759]' : 'border-[#ff453a]';
-        const textColorClass = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
-        const bgColorClass = isGmb ? 'bg-[#34c759]' : 'bg-[#ff453a]';
-
-        const renderRow = (label, etaObj) => {
-            if (!etaObj || !etaObj.eta) {
-                return `
-                <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
-                    <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
-                    <div class="text-gray-400 dark:text-gray-500 font-bold text-xs">沒有班次</div>
-                </div>`;
-            }
-
-            const etaTime = new Date(etaObj.eta);
-            const now = new Date();
-            const diffMs = etaTime - now;
-            let diffMins = Math.max(0, Math.floor(diffMs / 60000));
-            let timeStr = `${String(etaTime.getHours()).padStart(2,'0')}:${String(etaTime.getMinutes()).padStart(2,'0')}`;
-            
-            let minHtml = '';
-            if (diffMins <= 0) {
-                minHtml = `<span class="text-sm tracking-tight ${textColorClass}">即將抵達</span>`;
-            } else {
-                minHtml = `<span class="text-2xl ${textColorClass}">${diffMins}</span><span class="text-[10px] ml-0.5 ${textColorClass} font-normal">分</span>`;
-            }
-
-            return `
-            <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
-                <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
-                <div class="text-right flex flex-col justify-center">
-                    <div class="font-bold leading-none mb-1 flex items-baseline justify-end">${minHtml}</div>
-                    <div class="text-gray-500 text-[9px] leading-none">${timeStr}</div>
-                </div>
-            </div>`;
-        };
-
-        return `
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
-            <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
-                <div class="${bgColorClass} text-white font-bold text-xl px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
-                <div class="flex flex-col leading-tight overflow-hidden">
-                    <span class="text-gray-1200 dark:text-white font-bold text-[13px] truncate">往 ${item.dest}</span>
-                    <span class="text-gray-500 dark:text-gray-400 text-[10px] truncate">${item.stopName}</span>
-                </div>
-            </div>
-            ${renderRow('下一班', eta1)}
-            ${renderRow('第二班', eta2)}
-        </div>`;
-    } catch (e) {
-        return `<div class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-red-500/50 text-xs text-red-500 shadow-sm">載入錯誤</div>`;
-    }
 }
 
 async function searchKmbRoute() {
@@ -590,39 +529,6 @@ async function searchKmbRoute() {
     } catch (e) {
         console.error(e);
         statusEl.innerText = "搜尋錯誤，請重試。";
-    }
-}
-
-async function searchGmbRoute() {
-    const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
-    if(!routeInput) return;
-    
-    const statusEl = document.getElementById('kmb-search-status');
-    const container = document.getElementById('kmb-route-results');
-    container.innerHTML = '';
-    statusEl.innerText = '正在搜尋小巴...';
-    statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
-
-    let foundGmb = false;
-    const regions = ['NT', 'KLN', 'HKI'];
-    
-    for (const region of regions) {
-        try {
-            const mbRes = await fetch(`https://data.etagmb.gov.hk/route/${region}/${routeInput}`);
-            if (!mbRes.ok) continue;
-            const mbData = await mbRes.json();
-            
-            if (mbData.data && mbData.data.length > 0) {
-                foundGmb = true;
-                await renderGmbSearchResults(mbData.data, routeInput, container);
-            }
-        } catch(e) { console.error("GMB Search Error:", e); }
-    }
-
-    if(foundGmb) {
-        statusEl.innerText = '搜尋完成！';
-    } else {
-        statusEl.innerText = `找不到小巴路線 (${routeInput})`;
     }
 }
 
@@ -673,6 +579,238 @@ async function renderKmbSearchResults(routes, routeCode, container) {
         });
         html += `</div></div>`;
         container.insertAdjacentHTML('beforeend', html);
+    }
+}
+
+// ---- 城巴搜尋（修正目的地） ----
+async function searchCtbRoute() {
+    const routeInput = document.getElementById('ctb-route-input').value.trim().toUpperCase();
+    if (!routeInput) return;
+    const statusEl = document.getElementById('kmb-search-status');
+    const container = document.getElementById('kmb-route-results');
+    container.innerHTML = '';
+    statusEl.innerText = '正在搜尋城巴...';
+    statusEl.className = 'text-center text-[#0033a0] font-bold text-xs mb-2';
+
+    try {
+        // 同時取得上下行站點
+        const [dataO, dataI] = await Promise.all([
+            fetch(`https://rt.data.gov.hk/v2/transport/citybus/route-stop/CTB/${routeInput}/outbound`).then(r => r.json()),
+            fetch(`https://rt.data.gov.hk/v2/transport/citybus/route-stop/CTB/${routeInput}/inbound`).then(r => r.json())
+        ]);
+        const allStops = [
+            ...(dataO.data || []).map(s => ({ ...s, dir: 'O' })),
+            ...(dataI.data || []).map(s => ({ ...s, dir: 'I' }))
+        ];
+        if (allStops.length === 0) throw new Error('找不到該城巴路線資料');
+
+        // 快取所有站名
+        const stopIds = [...new Set(allStops.map(s => s.stop))];
+        await Promise.all(stopIds.map(id => getCtbStopName(id)));
+
+        // 分組（保留 dest_tc 原始值）
+        const groups = {};
+        allStops.forEach(s => {
+            const key = s.dir === 'O' ? 'outbound' : 'inbound';
+            if (!groups[key]) groups[key] = [];
+            const name = ctbStopCache.get(s.stop) || { zh: s.stop };
+            groups[key].push({
+                seq: parseInt(s.seq, 10),
+                stopId: s.stop,
+                stopName: name.zh,
+                dest_tc: s.dest_tc   // 保留原始 API 目的地
+            });
+        });
+
+        // 為每個方向決定最終目的地
+        for (const [dir, stops] of Object.entries(groups)) {
+            if (stops.length === 0) continue;
+            // 用 API 提供的 dest_tc，若無或只是「去程／回程」，則用最後一站名
+            const apiDest = stops[0]?.dest_tc;
+            const lastStopName = stops[stops.length - 1].stopName;
+            const finalDest = (apiDest && !['去程', '回程'].includes(apiDest)) ? apiDest : lastStopName;
+            // 將 finalDest 寫入每個站點
+            stops.forEach(s => s.dest = finalDest);
+        }
+
+        renderCtbSearchResults(groups, routeInput, container);
+        statusEl.innerText = '搜尋完成！';
+    } catch (e) {
+        statusEl.innerText = `搜尋錯誤：${e.message}`;
+    }
+}
+
+function renderCtbSearchResults(groups, routeCode, container) {
+    for (const [dir, stops] of Object.entries(groups)) {
+        if (stops.length === 0) continue;
+        const dest = stops[0]?.dest || (dir === 'outbound' ? '去程' : '回程');
+        const dirLabel = `往 ${dest}`;
+        let html = `
+            <div class="mt-4 bg-blue-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-blue-200 dark:border-blue-500/30">
+                <h4 class="text-[#0033a0] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
+                    <span class="bg-[#0033a0] text-white px-1.5 py-0.5 rounded text-[10px]">城巴</span> ${dirLabel}
+                </h4>
+                <div class="space-y-2">
+        `;
+        stops.sort((a, b) => a.seq - b.seq);
+        stops.forEach(stop => {
+            const idStr = `ctb_${routeCode}_${dir}_${stop.stopId}`;
+            const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
+            const itemData = encodeURIComponent(JSON.stringify({
+                id: idStr,
+                company: 'ctb',
+                route: routeCode,
+                dir: dir,
+                stopId: stop.stopId,
+                stopName: stop.stopName,
+                dest: stop.dest
+            }));
+            html += `
+                <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                    <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
+                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${stop.seq}</span>
+                        ${stop.stopName}
+                    </span>
+                    <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#0033a0] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
+                </label>
+            `;
+        });
+        html += `</div></div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+}
+
+// ---- 港鐵巴士搜尋 ----
+async function searchMtrBusRoute() {
+    const routeInput = document.getElementById('mtrbus-route-input').value.trim().toUpperCase();
+    if (!routeInput) return;
+    const statusEl = document.getElementById('kmb-search-status');
+    const container = document.getElementById('kmb-route-results');
+    container.innerHTML = '';
+    statusEl.innerText = '正在搜尋港鐵巴士...';
+    statusEl.className = 'text-center text-[#007078] font-bold text-xs mb-2';
+
+    if (mtrBusStops.length === 0 || Object.keys(mtrBusRoutes).length === 0) {
+        await loadMtrBusData();
+    }
+    if (mtrBusStops.length === 0) {
+        statusEl.innerText = '無法載入港鐵巴士站點資料';
+        return;
+    }
+
+    const routeStopsMap = new Map();
+    for (const [key, routeArr] of Object.entries(mtrBusRoutes)) {
+        const parts = key.split('-');
+        if (parts.length < 2) continue;
+        const routeNo = parts[0];
+        if (routeNo.toUpperCase() !== routeInput) continue;
+        const dir = parts[1]?.charAt(0) === 'U' ? 'outbound' : 'inbound';
+        const stopId = key;
+        const stopInfo = mtrBusStops.find(s => s.id === stopId);
+        if (stopInfo && !routeStopsMap.has(stopId)) {
+            const dest = routeArr[0]?.[2] || '目的地';
+            routeStopsMap.set(stopId, {
+                stopId,
+                stopName: stopInfo.name,
+                dir: dir,
+                dest: dest
+            });
+        }
+    }
+
+    if (routeStopsMap.size === 0) {
+        statusEl.innerText = `找不到港鐵巴士路線 (${routeInput})`;
+        return;
+    }
+
+    const stops = [...routeStopsMap.values()];
+    const groups = { outbound: [], inbound: [] };
+    stops.forEach(s => {
+        const dirKey = s.dir === 'outbound' ? 'outbound' : 'inbound';
+        groups[dirKey].push(s);
+    });
+    for (const dir of ['outbound', 'inbound']) {
+        groups[dir].sort((a, b) => {
+            const idxA = Object.keys(mtrBusRoutes).indexOf(a.stopId);
+            const idxB = Object.keys(mtrBusRoutes).indexOf(b.stopId);
+            return idxA - idxB;
+        });
+    }
+
+    renderMtrBusSearchResults(groups, routeInput, container);
+    statusEl.innerText = '搜尋完成！';
+}
+
+function renderMtrBusSearchResults(groups, routeCode, container) {
+    for (const [dir, stops] of Object.entries(groups)) {
+        if (stops.length === 0) continue;
+        const dest = stops[0]?.dest || '目的地';
+        const dirLabel = `往 ${dest}`;
+        let html = `
+            <div class="mt-4 bg-teal-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-teal-200 dark:border-teal-500/30">
+                <h4 class="text-[#007078] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
+                    <span class="bg-[#007078] text-white px-1.5 py-0.5 rounded text-[10px]">港鐵巴士</span> ${dirLabel}
+                </h4>
+                <div class="space-y-2">
+        `;
+        stops.forEach((stop, idx) => {
+            const idStr = `mtrbus_${routeCode}_${dir}_${stop.stopId}`;
+            const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
+            const itemData = encodeURIComponent(JSON.stringify({
+                id: idStr,
+                company: 'mtrbus',
+                route: routeCode,
+                dir: dir,
+                stopId: stop.stopId,
+                stopName: stop.stopName,
+                dest: stop.dest
+            }));
+            html += `
+                <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
+                    <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
+                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${idx+1}</span>
+                        ${stop.stopName}
+                    </span>
+                    <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#007078] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
+                </label>
+            `;
+        });
+        html += `</div></div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+}
+
+// ---- 專線小巴搜尋 ----
+async function searchGmbRoute() {
+    const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
+    if(!routeInput) return;
+    
+    const statusEl = document.getElementById('kmb-search-status');
+    const container = document.getElementById('kmb-route-results');
+    container.innerHTML = '';
+    statusEl.innerText = '正在搜尋小巴...';
+    statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
+
+    let foundGmb = false;
+    const regions = ['NT', 'KLN', 'HKI'];
+    
+    for (const region of regions) {
+        try {
+            const mbRes = await fetch(`https://data.etagmb.gov.hk/route/${region}/${routeInput}`);
+            if (!mbRes.ok) continue;
+            const mbData = await mbRes.json();
+            
+            if (mbData.data && mbData.data.length > 0) {
+                foundGmb = true;
+                await renderGmbSearchResults(mbData.data, routeInput, container);
+            }
+        } catch(e) { console.error("GMB Search Error:", e); }
+    }
+
+    if(foundGmb) {
+        statusEl.innerText = '搜尋完成！';
+    } else {
+        statusEl.innerText = `找不到小巴路線 (${routeInput})`;
     }
 }
 
@@ -775,6 +913,7 @@ async function renderGmbSearchResults(routes, routeCode, container) {
     }
 }
 
+// ---- 通用選取與排序 ----
 function toggleBusSelection(checkbox) {
     const data = JSON.parse(decodeURIComponent(checkbox.value));
     if (checkbox.checked) {
@@ -795,8 +934,13 @@ function renderKmbSortList() {
     }
     kmbSelected.forEach((item, index) => {
         const isGmb = item.company === 'gmb';
-        const badgeBorder = isGmb ? 'border-green-200 dark:border-[#34c759]/40' : 'border-red-200 dark:border-red-500/30';
-        const routeColor = isGmb ? 'text-[#34c759]' : 'text-[#ff453a]';
+        const isCtb = item.company === 'ctb';
+        const isMtrBus = item.company === 'mtrbus';
+        let badgeBorder = 'border-red-200 dark:border-red-500/30';
+        let routeColor = 'text-[#ff453a]';
+        if (isGmb) { badgeBorder = 'border-green-200 dark:border-[#34c759]/40'; routeColor = 'text-[#34c759]'; }
+        else if (isCtb) { badgeBorder = 'border-blue-200 dark:border-blue-500/30'; routeColor = 'text-[#0033a0]'; }
+        else if (isMtrBus) { badgeBorder = 'border-teal-200 dark:border-teal-500/30'; routeColor = 'text-[#007078]'; }
 
         list.innerHTML += `
             <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
@@ -820,4 +964,191 @@ function moveKmbSort(index, direction) {
     kmbSelected[index] = kmbSelected[index + direction];
     kmbSelected[index + direction] = temp;
     renderKmbSortList();
+}
+
+// ---- 卡片建構 (含 ETA，修正港鐵巴士時間計算) ----
+async function buildBusCardHtml(item) {
+    try {
+        let etas = [];
+        const isGmb = item.company === 'gmb';
+        const isCtb = item.company === 'ctb';
+        const isMtrBus = item.company === 'mtrbus';
+
+        if (isGmb) {
+            const res = await fetch(`https://data.etagmb.gov.hk/eta/stop/${item.stopId}`);
+            if (res.ok) {
+                const json = await res.json();
+                if (json.data) {
+                    const targetRoute = json.data.find(d => d.route_id == item.routeId && d.route_seq == item.dir);
+                    if (targetRoute && targetRoute.eta) {
+                        etas = targetRoute.eta
+                            .filter(d => d.timestamp !== null)
+                            .map(d => ({ eta: d.timestamp }))
+                            .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                    }
+                }
+            }
+        } else if (isCtb) {
+            const res = await fetch(`https://rt.data.gov.hk/v1/transport/citybus/eta/CTB/${item.stopId}/${item.route}`);
+            if (res.ok) {
+                const json = await res.json();
+                if (json.data) {
+                    etas = json.data
+                        .filter(d => d.eta !== null)
+                        .map(d => ({ eta: d.eta }))
+                        .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+                }
+            }
+        } else if (isMtrBus) {
+            const res = await fetch('https://rt.data.gov.hk/v1/transport/mtr/bus/getSchedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: 'zh', routeName: item.route })
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (Array.isArray(json.busStop)) {
+                    const stopData = json.busStop.find(s => s.busStopId === item.stopId);
+                    if (stopData && Array.isArray(stopData.bus)) {
+                        // 合併 arrival 與 departure（參考你的搜尋器）
+                        const rawEtas = stopData.bus
+                            .map(b => {
+                                const text = b.arrivalTimeText || b.departureTimeText || '';
+                                const sec = b.arrivalTimeInSecond ?? b.departureTimeInSecond ?? null;
+                                return { text, sec };
+                            })
+                            .filter(e => e.text.trim() !== '' || (e.sec !== null && e.sec >= 0));
+
+                        // 先嘗試使用文字
+                        let textEtas = rawEtas
+                            .filter(e => e.text.trim() !== '')
+                            .map(e => ({ text: e.text }))
+                            .slice(0, 2);
+
+                        if (textEtas.length > 0) {
+                            etas = textEtas;
+                        } else {
+                            // 使用秒數，過濾異常值 (>7200秒)
+                            const secEtas = rawEtas
+                                .filter(e => e.sec !== null && e.sec >= 0 && e.sec <= 7200)
+                                .map(e => {
+                                    const mins = Math.round(e.sec / 60);
+                                    if (mins === 0) return { text: '即將抵達' };
+                                    return { text: `${mins} 分鐘` };
+                                })
+                                .slice(0, 2);
+                            etas = secEtas;
+                        }
+
+                        // 如果仍然沒有 eta，且該站是總站（與目的地相同），則顯示「總站」
+                        if (etas.length === 0) {
+                            const isTerminus = (item.stopName === item.dest);
+                            if (isTerminus) {
+                                etas = [{ text: '總站' }];
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // 九巴
+            const serviceType = item.serviceType || '1';
+            const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${item.stopId}/${item.route}/${serviceType}`);
+            const json = await res.json();
+            if (json.data) {
+                etas = json.data
+                    .filter(d => d.dir === item.dir && d.eta !== null)
+                    .map(d => ({ eta: d.eta }))
+                    .sort((a, b) => new Date(a.eta) - new Date(b.eta));
+            }
+        }
+
+        let eta1 = etas[0];
+        let eta2 = etas[1];
+        const borderColorClass = isGmb ? 'border-[#34c759]' : (isCtb ? 'border-[#0033a0]' : (isMtrBus ? 'border-[#007078]' : 'border-[#ff453a]'));
+        const textColorClass = isGmb ? 'text-[#34c759]' : (isCtb ? 'text-[#0033a0]' : (isMtrBus ? 'text-[#007078]' : 'text-[#ff453a]'));
+        const bgColorClass = isGmb ? 'bg-[#34c759]' : (isCtb ? 'bg-[#0033a0]' : (isMtrBus ? 'bg-[#007078]' : 'bg-[#ff453a]'));
+
+        const renderRow = (label, etaObj) => {
+            if (!etaObj || (!etaObj.eta && !etaObj.text)) {
+                return `
+                <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
+                    <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                    <div class="text-gray-400 dark:text-gray-500 font-bold text-xs">沒有班次</div>
+                </div>`;
+            }
+            if (etaObj.text) {
+                // 如果是「總站」，用灰色顯示
+                const isTerminus = etaObj.text === '總站';
+                const cls = isTerminus ? 'text-gray-500 dark:text-gray-400' : textColorClass;
+                return `
+                <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
+                    <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                    <div class="text-right flex flex-col justify-center">
+                        <div class="font-bold leading-none mb-1 flex items-baseline justify-end">
+                            <span class="text-sm ${cls}">${etaObj.text}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            // 否則用 eta 時間計算
+            const etaTime = new Date(etaObj.eta);
+            const now = new Date();
+            const diffMs = etaTime - now;
+            let diffMins = Math.max(0, Math.floor(diffMs / 60000));
+            const timeStr = `${String(etaTime.getHours()).padStart(2,'0')}:${String(etaTime.getMinutes()).padStart(2,'0')}`;
+            let minHtml = '';
+            if (diffMins <= 0) {
+                minHtml = `<span class="text-sm tracking-tight ${textColorClass}">即將抵達</span>`;
+            } else {
+                minHtml = `<span class="text-2xl ${textColorClass}">${diffMins}</span><span class="text-[10px] ml-0.5 ${textColorClass} font-normal">分</span>`;
+            }
+            return `
+            <div class="border-l-2 ${borderColorClass} pl-2 flex justify-between items-center h-[42px] mt-1.5">
+                <span class="text-gray-500 dark:text-gray-400 text-[10px] whitespace-nowrap">${label}</span>
+                <div class="text-right flex flex-col justify-center">
+                    <div class="font-bold leading-none mb-1 flex items-baseline justify-end">${minHtml}</div>
+                    <div class="text-gray-500 text-[9px] leading-none">${timeStr}</div>
+                </div>
+            </div>`;
+        };
+
+        return `
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
+            <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
+                <div class="${bgColorClass} text-white font-bold text-xl px-1.5 py-0.5 rounded shadow-sm leading-none tracking-tighter flex-shrink-0">${item.route}</div>
+                <div class="flex flex-col leading-tight overflow-hidden">
+                    <span class="text-gray-1200 dark:text-white font-bold text-[13px] truncate">往 ${item.dest}</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-[10px] truncate">${item.stopName}</span>
+                </div>
+            </div>
+            ${renderRow('下一班', eta1)}
+            ${renderRow('第二班', eta2)}
+        </div>`;
+    } catch (e) {
+        console.error('buildBusCardHtml error', e);
+        return `<div class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-red-500/50 text-xs text-red-500 shadow-sm">載入錯誤</div>`;
+    }
+}
+
+// ---- 取得並顯示所有已選站點 ----
+async function fetchKMBData() {
+    const container = document.getElementById('kmb-container');
+    const now = new Date();
+    document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    if (kmbSelected.length === 0) {
+        container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
+        return;
+    }
+
+    container.classList.add('opacity-50', 'transition-opacity');
+    container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
+
+    kmbSelected.forEach(async (item, i) => {
+        const html = await buildBusCardHtml(item);
+        const card = document.getElementById(`bus-card-${i}`);
+        if (card) card.outerHTML = html;
+    });
+    setTimeout(() => container.classList.remove('opacity-50'), 500);
 }

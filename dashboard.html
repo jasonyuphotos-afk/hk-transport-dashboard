@@ -11,7 +11,7 @@
         tailwind.config = {
             darkMode: 'class',
         }
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -22,9 +22,7 @@
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
     <div class="absolute top-3 right-4 z-10 flex gap-2">
-        <button onclick="openSystemSettings()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors" title="系統設定">
-            ⚙️
-        </button>
+        <button onclick="openSystemSettings()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors" title="系統設定">⚙️</button>
         <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors">
             <span id="theme-icon"></span>
         </button>
@@ -40,9 +38,7 @@
                 <div class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div class="flex items-center gap-2">
                     <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
-                        <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">
-                            ⚠️ 警告生效
-                        </span>
+                        <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">⚠️ 警告生效</span>
                     </div>
                     <div class="bg-white/60 dark:bg-[#3a3a3c] border border-gray-200 dark:border-gray-700/50 px-2 py-1 rounded text-xs flex items-center gap-1 cursor-pointer active:bg-gray-200 dark:active:bg-gray-600 transition-colors" onclick="fetchWeather(); event.stopPropagation();">
                         <span id="weather-refresh-time" class="text-gray-600 dark:text-gray-300">--:--</span> 🔄
@@ -145,11 +141,11 @@
             </div>
         </div>
 
-        <!-- 九巴/小巴 -->
+        <!-- 巴士 / 小巴 -->
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleKMB()">
-                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">九巴 / 小巴</h2>
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white">巴士 / 小巴</h2>
                     <span id="kmb-toggle-icon" class="text-xs transition-transform duration-300 text-gray-500">▼</span>
                 </div>
                 <div class="flex gap-2 items-center">
@@ -162,7 +158,7 @@
             </div>
             <div id="kmb-content" class="collapsible-content collapsed">
                 <div id="kmb-container" class="grid grid-cols-2 gap-2.5">
-                    <div class="text-xs text-gray-500 dark:text-gray-400 col-span-2 text-center py-4">請前往設定添加九巴或小巴路線。</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 col-span-2 text-center py-4">請前往設定加入巴士或小巴路線。</div>
                 </div>
             </div>
         </div>
@@ -230,7 +226,7 @@
         </div>
     </div>
 
-    <!-- 九巴設定 Modal -->
+    <!-- 巴士 / 小巴設定 Modal -->
     <div id="kmb-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -244,18 +240,38 @@
                 </div>
                 <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
             </div>            
+            <!-- Tab 切換：四個分頁 -->
             <div class="mb-3 flex-shrink-0 flex border-b border-gray-200 dark:border-gray-700">
                 <button id="tab-kmb" onclick="switchBusTab('kmb')" class="flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors">九巴</button>
+                <button id="tab-ctb" onclick="switchBusTab('ctb')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">城巴</button>
+                <button id="tab-mtrbus" onclick="switchBusTab('mtrbus')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">港鐵巴士</button>
                 <button id="tab-gmb" onclick="switchBusTab('gmb')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">專線小巴</button>
             </div>
+
+            <!-- 九巴搜尋面板 -->
             <div id="search-panel-kmb" class="mb-4 flex-shrink-0 flex gap-2">
                 <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
                 <button onclick="searchKmbRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
+
+            <!-- 城巴搜尋面板 -->
+            <div id="search-panel-ctb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
+                <input type="text" id="ctb-route-input" placeholder="輸入城巴路線 (例如 8X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#0033a0] text-sm uppercase">
+                <button onclick="searchCtbRoute()" class="bg-[#0033a0] text-white font-bold px-4 rounded-xl active:bg-[#002277]">搜尋</button>
+            </div>
+
+            <!-- 港鐵巴士搜尋面板 -->
+            <div id="search-panel-mtrbus" class="mb-4 flex-shrink-0 flex gap-2 hidden">
+                <input type="text" id="mtrbus-route-input" placeholder="輸入港鐵巴士路線 (例如 K51)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#007078] text-sm uppercase">
+                <button onclick="searchMtrBusRoute()" class="bg-[#007078] text-white font-bold px-4 rounded-xl active:bg-[#005a61]">搜尋</button>
+            </div>
+
+            <!-- 專線小巴搜尋面板 -->
             <div id="search-panel-gmb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
                 <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#34c759] text-sm uppercase">
                 <button onclick="searchGmbRoute()" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
+
             <div id="kmb-search-status" class="text-center text-blue-600 dark:text-[#64d2ff] font-bold text-xs mb-2"></div>
             <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
         </div>
@@ -269,12 +285,12 @@
                 <button onclick="closeMtrSettings()" class="text-[#ea2227] dark:text-[#ff4d4d] font-bold px-4 py-1.5 bg-red-100 dark:bg-[#ea2227]/20 rounded-full active:bg-red-200">完成</button>
             </div>
             <div id="mtr-sort-section" class="mb-4 flex-shrink-0 flex flex-col transition-all">
-    <div class="flex justify-between items-center mb-2 tracking-wide">
-        <h4 class="text-[#ea2227] font-bold text-[11px]">已選車站排序 (點擊箭頭調整首頁順序)</h4>
-        <button type="button" onclick="toggleExpandSort('mtr')" id="mtr-sort-expand-btn" class="text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform">放大 🔍</button>
-    </div>
-    <div id="mtr-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[120px] overflow-y-auto scroll-area"></div>
-</div>
+                <div class="flex justify-between items-center mb-2 tracking-wide">
+                    <h4 class="text-[#ea2227] font-bold text-[11px]">已選車站排序 (點擊箭頭調整首頁順序)</h4>
+                    <button type="button" onclick="toggleExpandSort('mtr')" id="mtr-sort-expand-btn" class="text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform">放大 🔍</button>
+                </div>
+                <div id="mtr-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[120px] overflow-y-auto scroll-area"></div>
+            </div>
             <div id="mtr-station-list-settings" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-5"></div>
         </div>
     </div>
@@ -306,11 +322,17 @@
     
     <footer class="mt-6 mb-4">
         <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-1 w-full">
-            <p>Created by Jason | Version 1.0</p>
+            <p>Created by Jason | Version 1.1</p>
         </div>
     </footer>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
-  
+    <div style="text-align:center; margin: 16px 0;">
+        <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+        <script type='text/javascript'>
+            kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'B8D5229GWX');
+            kofiwidget2.draw();
+        </script>
+    </div>    
 </body>
 </html>
