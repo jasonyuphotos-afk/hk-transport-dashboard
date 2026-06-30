@@ -414,7 +414,7 @@ async function fetchMTRData() {
                                 <div class="text-white px-2 py-0.5 rounded shadow-sm font-black text-[11px] tracking-wider" style="background-color: ${lineInfo.color};">${lineInfo.name}</div>
                             </div>
                             <div class="p-4 flex items-center justify-center">
-                                <span class="text-xs text-gray-400 dark:text-gray-500">🚇 暫停服務 / 尾班車已開出</span>
+                                <span class="text-xs text-gray-400 dark:text-gray-500">暫停服務 / 尾班車已開出</span>
                             </div>
                         </div>`;
                         html += platformHtml;
