@@ -704,16 +704,17 @@ async function searchMtrBusRoute() {
         if (parts.length < 2) continue;
         const routeNo = parts[0];
         if (routeNo.toUpperCase() !== routeInput) continue;
+        // 判斷方向：U開頭為outbound，D開頭為inbound（或反之，但依照你的資料）
         const dir = parts[1]?.charAt(0) === 'U' ? 'outbound' : 'inbound';
         const stopId = key;
         const stopInfo = mtrBusStops.find(s => s.id === stopId);
         if (stopInfo && !routeStopsMap.has(stopId)) {
-            const dest = routeArr[0]?.[2] || '目的地';
             routeStopsMap.set(stopId, {
                 stopId,
                 stopName: stopInfo.name,
                 dir: dir,
-                dest: dest
+                // 不再依賴 routeArr[0][2]，暫時留空
+                dest: ''
             });
         }
     }
@@ -723,18 +724,26 @@ async function searchMtrBusRoute() {
         return;
     }
 
-    const stops = [...routeStopsMap.values()];
+    // 分組
     const groups = { outbound: [], inbound: [] };
-    stops.forEach(s => {
-        const dirKey = s.dir === 'outbound' ? 'outbound' : 'inbound';
-        groups[dirKey].push(s);
-    });
+    for (const stop of routeStopsMap.values()) {
+        groups[stop.dir].push(stop);
+    }
+
+    // 對每個方向：排序並以最後一個站的名稱作為該方向總站
     for (const dir of ['outbound', 'inbound']) {
-        groups[dir].sort((a, b) => {
+        const stops = groups[dir];
+        if (stops.length === 0) continue;
+        // 按原 key 順序排序（確保順序正確）
+        stops.sort((a, b) => {
             const idxA = Object.keys(mtrBusRoutes).indexOf(a.stopId);
             const idxB = Object.keys(mtrBusRoutes).indexOf(b.stopId);
             return idxA - idxB;
         });
+        // 取最後一個站的名稱作為該方向總站
+        const terminus = stops[stops.length - 1].stopName;
+        // 更新該方向所有站的目的地為該總站名稱
+        stops.forEach(s => s.dest = terminus);
     }
 
     renderMtrBusSearchResults(groups, routeInput, container);
