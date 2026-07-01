@@ -9,7 +9,7 @@
 
     <link rel="manifest" href="/manifest.json">
     
-    <!-- 👇 Icon 設定（直接學 QR Cards，只用 apple-touch-icon） -->
+    <!-- 👇 Icon 設定（直接學 QR Cards） -->
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192x192.png">
     <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-192x192.png">
@@ -28,6 +28,16 @@
         }
     </script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 為所有置中彈窗嘅內容加上安全區邊距 */
+        .modal-content-center {
+            margin-top: env(safe-area-inset-top);
+        }
+        /* 底部彈窗內容加上安全區 padding */
+        .modal-content-bottom {
+            padding-top: env(safe-area-inset-top);
+        }
+    </style>
 </head>
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
@@ -170,8 +180,10 @@
         </div>
     </div>
 
+    <!-- Modal 區塊，全部加上安全區處理 -->
+    <!-- 屯轉彈窗 -->
     <div id="tm-cl-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-4 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTmClPopup()">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[400px] border border-[#ff453a]/40 shadow-2xl relative max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[400px] border border-[#ff453a]/40 shadow-2xl relative max-h-[80vh] flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff453a] text-lg font-bold flex items-center gap-2">🚌 屯門公路轉車站</h3>
                 <button onclick="closeTmClPopup()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
@@ -187,8 +199,9 @@
         </div>
     </div>
 
+    <!-- 天氣警告彈窗 -->
     <div id="warning-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeWarningModal()">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-red-500/40 shadow-2xl relative max-h-[70vh] flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff453a] text-lg font-bold flex items-center gap-2">⚠️ 特別天氣警告</h3>
                 <button onclick="closeWarningModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
@@ -197,8 +210,9 @@
         </div>
     </div>
 
+    <!-- 特別交通消息彈窗（重點修復） -->
     <div id="traffic-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
                 <h3 class="text-[#ff9f0a] text-lg font-bold flex items-center gap-2">🚦 特別交通消息</h3>
                 <button onclick="closeTrafficModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
@@ -207,8 +221,9 @@
         </div>
     </div>
 
+    <!-- 輕鐵設定（底部彈窗） -->
     <div id="settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定輕鐵站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="selected-count">0</span> 站</span></h3>
                 <button onclick="closeSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
@@ -228,8 +243,9 @@
         </div>
     </div>
 
+    <!-- 巴士設定（底部彈窗） -->
     <div id="kmb-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定巴士路線 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="kmb-selected-count">0</span> 站</span></h3>
                 <button onclick="closeKmbSettings()" class="text-blue-600 dark:text-blue-500 font-bold px-4 py-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-full active:bg-blue-200 dark:active:bg-blue-500/40">完成</button>
@@ -273,8 +289,9 @@
         </div>
     </div>
 
+    <!-- 港鐵設定（底部彈窗） -->
     <div id="mtr-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">設定港鐵車站 <span class="text-xs text-gray-500 font-normal ml-2">已選 <span id="mtr-selected-count">0</span> 站</span></h3>
                 <button onclick="closeMtrSettings()" class="text-[#ea2227] dark:text-[#ff4d4d] font-bold px-4 py-1.5 bg-red-100 dark:bg-[#ea2227]/20 rounded-full active:bg-red-200">完成</button>
@@ -290,8 +307,9 @@
         </div>
     </div>
 
+    <!-- 系統設定（置中彈窗） -->
     <div id="system-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeSystemSettings()">
-        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-blue-500/40 shadow-2xl relative flex flex-col" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-blue-500/40 shadow-2xl relative flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
                 <h3 class="text-blue-600 dark:text-[#64d2ff] text-lg font-bold flex items-center gap-2">⚙️ 系統設定</h3>
                 <button onclick="closeSystemSettings()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none">&times;</button>
