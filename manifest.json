@@ -1,30 +1,27 @@
 {
-  "name": "HK Traffic Dashboard",
+  "name": "Traffic Dashboard",
   "short_name": "Traffic",
-  "description": "香港即時交通、天氣及巴士資訊",
-  "start_url": "/",
-  "display": "fullscreen",
-  "orientation": "portrait",
+  "description": "Hong Kong Traffic & Weather Dashboard",
+  "start_url": "/dashboard.html",
+  "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/assets/180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "/assets/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "/assets/190.png",
-      "sizes": "190x190",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "/assets/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     },
     {
-      "src": "/assets/512.png",
+      "src": "/assets/maskable-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
     }
   ]
 }
