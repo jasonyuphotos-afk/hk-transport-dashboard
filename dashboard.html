@@ -8,7 +8,10 @@
 
     <!-- ========== PWA ========== -->
     <link rel="manifest" href="/manifest.json">
+    <!-- iOS 專用圖示 -->
     <link rel="apple-touch-icon" href="/assets/180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/190.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/512.png">
     <meta name="theme-color" content="#000000">
     <!-- ============================== -->
 
@@ -29,14 +32,16 @@
 </head>
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
-    <div class="absolute top-3 right-4 z-10 flex gap-2">
+    <!-- 右上角按鈕：調整 top 以避開 iOS 安全區域 -->
+    <div class="absolute right-4 z-10 flex gap-2" style="top: max(12px, env(safe-area-inset-top, 12px));">
         <button onclick="openSystemSettings()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors" title="系統設定">⚙️</button>
         <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors">
             <span id="theme-icon"></span>
         </button>
     </div>
 
-    <div class="h-12 w-full"></div>
+    <!-- 原本的 .h-12 作為間距，改用安全區域高度 -->
+    <div style="height: env(safe-area-inset-top, 48px);"></div>
 
     <div class="max-w-[430px] mx-auto px-4 space-y-4">
 
@@ -346,7 +351,7 @@
         </script>
     </div>
 
-    <!-- ========== PWA: 註冊 Service Worker ========== -->
+    <!-- PWA: 註冊 Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
@@ -358,7 +363,6 @@
                 });
         }
     </script>
-    <!-- =========================================== -->
 
 </body>
 </html>
