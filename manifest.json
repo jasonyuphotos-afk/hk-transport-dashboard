@@ -1,9 +1,9 @@
 {
   "name": "HK Traffic Dashboard",
-  "short_name": "HKTraffic",
+  "short_name": "Traffic",
   "description": "香港即時交通、天氣及巴士資訊",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
