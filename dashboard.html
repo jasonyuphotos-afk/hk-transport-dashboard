@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Traffic Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- ========== PWA ========== -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/180.png">
+    <meta name="theme-color" content="#000000">
+    <!-- ============================== -->
+
+    <title>HK Traffic Dashboard</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -53,7 +61,7 @@
                         <span class="text-lg leading-none mt-1 ml-0.5 text-gray-900 dark:text-white">°C</span>
                     </div>
                     <div class="text-3xl my-2" id="weather-icon">☁️</div>
-                    <div class="text-[10px] font-bold text-gray-800 dark:text-white" id="weather-min-max"> --°C /  --°C</div>
+                    <div class="text-[10px] font-bold text-gray-800 dark:text-white" id="weather-min-max"> --°C / --°C</div>
                     <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-0.5 w-full" id="weather-details">
                         <div>濕度 --%</div>
                     </div>
@@ -239,7 +247,7 @@
                     <button type="button" onclick="toggleExpandSort('kmb')" id="kmb-sort-expand-btn" class="text-[10px] text-blue-600 dark:text-blue-500 font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 rounded-md active:scale-95 transition-transform">放大 🔍</button>
                 </div>
                 <div id="kmb-selected-sort-list" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 dark:bg-[#2c2c2e] rounded-xl border border-gray-200 dark:border-gray-700 min-h-[55px] max-h-[100px] overflow-y-auto scroll-area"></div>
-            </div>            
+            </div>
             <!-- Tab 切換：四個分頁 -->
             <div class="mb-3 flex-shrink-0 flex border-b border-gray-200 dark:border-gray-700">
                 <button id="tab-kmb" onclick="switchBusTab('kmb')" class="flex-1 py-2 text-sm font-bold text-[#ff453a] border-b-2 border-[#ff453a] transition-colors">九巴</button>
@@ -319,20 +327,38 @@
             </div>
         </div>
     </div>
-    
+
     <footer class="mt-6 mb-4">
         <div class="text-[10px] text-gray-500 dark:text-gray-400 font-medium text-center space-y-1 w-full">
             <p>Created by Jason | Version 1.1</p>
         </div>
     </footer>
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/api.js">
+    </script>
+    <script src="js/app.js">
+    </script>
     <div style="text-align:center; margin: 16px 0;">
-        <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+        <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'>
+        </script>
         <script type='text/javascript'>
             kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'B8D5229GWX');
             kofiwidget2.draw();
         </script>
-    </div>    
+    </div>
+
+    <!-- ========== PWA: 註冊 Service Worker ========== -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(reg) {
+                    console.log('✅ Service Worker 註冊成功 (Scope:', reg.scope, ')');
+                })
+                .catch(function(err) {
+                    console.warn('⚠️ Service Worker 註冊失敗:', err);
+                });
+        }
+    </script>
+    <!-- =========================================== -->
+
 </body>
 </html>
