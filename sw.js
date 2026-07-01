@@ -1,4 +1,3 @@
-// sw.js
 const CACHE_NAME = 'traffic-dash-v1';
 const urlsToCache = [
   '/',
