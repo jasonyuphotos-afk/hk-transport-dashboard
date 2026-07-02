@@ -9,7 +9,7 @@
 
     <link rel="manifest" href="/manifest.json">
     
-    <!-- 👇 Icon 設定（直接學 QR Cards） -->
+    <!-- Icon 設定 -->
     <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192x192.png">
     <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-192x192.png">
@@ -29,19 +29,26 @@
     </script>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* 為所有置中彈窗嘅內容加上安全區邊距 */
         .modal-content-center {
             margin-top: env(safe-area-inset-top);
         }
-        /* 底部彈窗內容加上安全區 padding */
         .modal-content-bottom {
             padding-top: env(safe-area-inset-top);
+        }
+        #weather-region-select option {
+            background: #1c1c1e;
+            color: #fff;
+        }
+        #weather-region-select.dark option {
+            background: #1c1c1e;
+            color: #fff;
         }
     </style>
 </head>
 <body class="pb-10 relative bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
 
-        <div class="absolute right-4 z-10 flex gap-2" style="top: calc(env(safe-area-inset-top, 0px) + 16px);">
+    <!-- 右上角按鈕 -->
+    <div class="absolute right-4 z-10 flex gap-2" style="top: calc(env(safe-area-inset-top, 0px) + 16px);">
         <button onclick="openSystemSettings()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors" title="系統設定">⚙️</button>
         <button onclick="toggleTheme()" class="bg-white/80 dark:bg-black/50 backdrop-blur border border-gray-200 dark:border-gray-700 p-1 rounded-full shadow-sm text-sm w-7 h-7 flex items-center justify-center transition-colors">
             <span id="theme-icon"></span>
@@ -50,13 +57,48 @@
 
     <div style="height: calc(env(safe-area-inset-top, 0px) + 60px);"></div>
 
-
     <div class="max-w-[430px] mx-auto px-4 space-y-4">
 
+        <!-- ===== 天氣卡片 ===== -->
         <div class="bg-gradient-to-b from-blue-50 to-white dark:from-[#1c2a3d] dark:to-[#121a2f] rounded-2xl p-4 border border-blue-100 dark:border-gray-700 shadow-lg relative transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700/60 pb-2">
                 <div class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wider" id="current-time">載入時間中...</div>
                 <div class="flex items-center gap-2">
+                    <!-- 天氣地區選擇器 -->
+                    <select id="weather-region-select" onchange="changeWeatherRegion(this.value)" class="bg-white/60 dark:bg-[#3a3a3c] border border-gray-200 dark:border-gray-700/50 rounded text-xs py-1 px-2 outline-none focus:border-blue-500 transition-colors max-w-[100px]">
+                        <option value="屯門">屯門</option>
+                        <option value="香港">香港</option>
+                        <option value="元朗">元朗</option>
+                        <option value="天水圍">天水圍</option>
+                        <option value="將軍澳">將軍澳</option>
+                        <option value="沙田">沙田</option>
+                        <option value="大埔">大埔</option>
+                        <option value="荃灣">荃灣</option>
+                        <option value="青衣">青衣</option>
+                        <option value="東涌">東涌</option>
+                        <option value="赤鱲角">赤鱲角</option>
+                        <option value="黃大仙">黃大仙</option>
+                        <option value="觀塘">觀塘</option>
+                        <option value="尖沙咀">尖沙咀</option>
+                        <option value="中環">中環</option>
+                        <option value="灣仔">灣仔</option>
+                        <option value="銅鑼灣">銅鑼灣</option>
+                        <option value="北角">北角</option>
+                        <option value="柴灣">柴灣</option>
+                        <option value="筲箕灣">筲箕灣</option>
+                        <option value="薄扶林">薄扶林</option>
+                        <option value="赤柱">赤柱</option>
+                        <option value="西貢">西貢</option>
+                        <option value="上水">上水</option>
+                        <option value="粉嶺">粉嶺</option>
+                        <option value="打鼓嶺">打鼓嶺</option>
+                        <option value="流浮山">流浮山</option>
+                        <option value="石崗">石崗</option>
+                        <option value="長洲">長洲</option>
+                        <option value="坪洲">坪洲</option>
+                        <option value="南丫島">南丫島</option>
+                        <option value="大嶼山">大嶼山</option>
+                    </select>
                     <div id="weather-warning-icon" class="hidden cursor-pointer active:scale-95 transition-transform" onclick="openWarningModal()">
                         <span class="bg-[#ff453a]/10 dark:bg-[#ff453a]/20 text-[#ff453a] border border-[#ff453a]/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 animate-pulse shadow-[0_0_8px_rgba(255,69,58,0.3)]">⚠️ 警告生效</span>
                     </div>
@@ -84,7 +126,7 @@
                         <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-desc">載入中...</div>
                     </div>
                     <div>
-                        <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">天氣預測</div>
+                        <div class="text-blue-600 dark:text-[#64d2ff] font-bold text-[10px] uppercase tracking-widest mb-1">明日預測</div>
                         <div class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed text-justify" id="weather-forecast">載入中...</div>
                     </div>
                     <div>
@@ -95,6 +137,7 @@
             </div>
         </div>
 
+        <!-- ===== 特別交通消息 ===== -->
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-2 px-1">
                 <h2 class="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">🚦 <span class="text-[#ff9f0a]">特別交通消息</span></h2>
@@ -110,6 +153,7 @@
             </div>
         </div>
 
+        <!-- ===== 輕鐵 ===== -->
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleLRT()">
@@ -134,6 +178,7 @@
             </div>
         </div>
 
+        <!-- ===== 港鐵 ===== -->
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleMTR()">
@@ -158,6 +203,7 @@
             </div>
         </div>
 
+        <!-- ===== 巴士 / 小巴 ===== -->
         <div class="glass-panel bg-white/80 dark:bg-[#1e1e1e]/80 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-none transition-colors duration-300">
             <div class="flex justify-between items-center mb-3 px-1">
                 <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="toggleKMB()">
@@ -180,7 +226,8 @@
         </div>
     </div>
 
-    <!-- Modal 區塊，全部加上安全區處理 -->
+    <!-- ===== 所有 Modal ===== -->
+
     <!-- 屯轉彈窗 -->
     <div id="tm-cl-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-4 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTmClPopup()">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[400px] border border-[#ff453a]/40 shadow-2xl relative max-h-[80vh] flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
@@ -210,7 +257,7 @@
         </div>
     </div>
 
-    <!-- 特別交通消息彈窗（重點修復） -->
+    <!-- 特別交通消息彈窗 -->
     <div id="traffic-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeTrafficModal()">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-[#ff9f0a]/40 shadow-2xl relative max-h-[70vh] flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 flex-shrink-0">
@@ -221,7 +268,7 @@
         </div>
     </div>
 
-    <!-- 輕鐵設定（底部彈窗） -->
+    <!-- 輕鐵設定 -->
     <div id="settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -243,7 +290,7 @@
         </div>
     </div>
 
-    <!-- 巴士設定（底部彈窗） -->
+    <!-- 巴士設定 -->
     <div id="kmb-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -263,33 +310,28 @@
                 <button id="tab-mtrbus" onclick="switchBusTab('mtrbus')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">港鐵巴士</button>
                 <button id="tab-gmb" onclick="switchBusTab('gmb')" class="flex-1 py-2 text-sm font-bold text-gray-500 dark:text-gray-500 border-b-2 border-transparent transition-colors">專線小巴</button>
             </div>
-
             <div id="search-panel-kmb" class="mb-4 flex-shrink-0 flex gap-2">
                 <input type="text" id="kmb-route-input" placeholder="輸入九巴路線 (例如 60X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#ff453a] text-sm uppercase">
                 <button onclick="searchKmbRoute()" class="bg-[#ff453a] text-white font-bold px-4 rounded-xl active:bg-red-700">搜尋</button>
             </div>
-
             <div id="search-panel-ctb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
                 <input type="text" id="ctb-route-input" placeholder="輸入城巴路線 (例如 8X)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#0033a0] text-sm uppercase">
                 <button onclick="searchCtbRoute()" class="bg-[#0033a0] text-white font-bold px-4 rounded-xl active:bg-[#002277]">搜尋</button>
             </div>
-
             <div id="search-panel-mtrbus" class="mb-4 flex-shrink-0 flex gap-2 hidden">
                 <input type="text" id="mtrbus-route-input" placeholder="輸入港鐵巴士路線 (例如 K51)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#007078] text-sm uppercase">
                 <button onclick="searchMtrBusRoute()" class="bg-[#007078] text-white font-bold px-4 rounded-xl active:bg-[#005a61]">搜尋</button>
             </div>
-
             <div id="search-panel-gmb" class="mb-4 flex-shrink-0 flex gap-2 hidden">
                 <input type="text" id="gmb-route-input" placeholder="輸入小巴路線 (例如 44)" class="flex-1 bg-gray-50 dark:bg-[#2c2c2e] text-gray-900 dark:text-white px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:border-[#34c759] text-sm uppercase">
                 <button onclick="searchGmbRoute()" class="bg-[#34c759] text-white font-bold px-4 rounded-xl active:bg-green-700">搜尋</button>
             </div>
-
             <div id="kmb-search-status" class="text-center text-blue-600 dark:text-[#64d2ff] font-bold text-xs mb-2"></div>
             <div id="kmb-route-results" class="overflow-y-auto scroll-area pb-10 flex-1 space-y-4"></div>
         </div>
     </div>
 
-    <!-- 港鐵設定（底部彈窗） -->
+    <!-- 港鐵設定 -->
     <div id="mtr-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/80 z-50 hidden flex-col justify-end">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-t-3xl p-5 w-full h-[85vh] flex flex-col modal-content-bottom" style="padding-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -307,7 +349,7 @@
         </div>
     </div>
 
-    <!-- 系統設定（置中彈窗） -->
+    <!-- 系統設定 -->
     <div id="system-settings-modal" class="fixed inset-0 bg-black/40 dark:bg-black/70 z-50 hidden flex-col justify-center items-center p-6 opacity-0 transition-opacity duration-300 modal-backdrop" onclick="closeSystemSettings()">
         <div class="bg-white dark:bg-[#1c1c1e] rounded-2xl p-5 w-full max-w-[380px] border border-blue-500/40 shadow-2xl relative flex flex-col modal-content-center" onclick="event.stopPropagation()" style="margin-top: env(safe-area-inset-top);">
             <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-3">
@@ -337,10 +379,37 @@
             <p>Created by Jason | Version 1.1</p>
         </div>
     </footer>
+
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
-    
 
+    <!-- ===== 天氣地區同步 ===== -->
+    <script>
+        function changeWeatherRegion(region) {
+            if (setWeatherRegion(region)) {
+                document.getElementById('weather-region-select').value = region;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const region = getWeatherRegion();
+            const select = document.getElementById('weather-region-select');
+            if (select) {
+                select.value = region;
+            }
+        });
+    </script>
+
+    <!-- Ko-fi 贊助 -->
+    <div style="text-align:center; margin: 16px 0;">
+        <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+        <script type='text/javascript'>
+            kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'B8D5229GWX');
+            kofiwidget2.draw();
+        </script>
+    </div>
+
+    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')

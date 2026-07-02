@@ -56,78 +56,169 @@ for (const [line, stations] of Object.entries(MTR_STATIONS_BY_LINE)) {
     }
 }
 
-const MTR_DEST_DICT = { 'WKS': '烏溪沙', 'TUM': '屯門', 'TSW': '荃灣', 'CEN': '中環', 'TIK': '調景嶺', 'WHA': '黃埔', 'CHW': '柴灣', 'KET': '堅尼地城', 'LOW': '羅湖', 'LMC': '落馬洲', 'ADM': '金鐘', 'POA': '寶琳', 'LHP': '康城', 'NOP': '北角', 'TUC': '東涌', 'HOK': '香港', 'SOH': '海怡半島', 'AWE': '博覽館', 'SHS': '上水', 'TAP': '大埔墟', 'FOT': '火炭', 'MOK': '旺角', 'TSY': '青衣', 'HUH': '紅磡', };
+const MTR_DEST_DICT = { 'WKS': '烏溪沙', 'TUM': '屯門', 'TSW': '荃灣', 'CEN': '中環', 'TIK': '調景嶺', 'WHA': '黃埔', 'CHW': '柴灣', 'KET': '堅尼地城', 'LOW': '羅湖', 'LMC': '落馬洲', 'ADM': '金鐘', 'POA': '寶琳', 'LHP': '康城', 'NOP': '北角', 'TUC': '東涌', 'HOK': '香港', 'SOH': '海怡半島', 'AWE': '博覽館', 'SHS': '上水', 'TAP': '大埔墟', 'FOT': '火炭', 'MOK': '旺角', 'TSY': '青衣', 'HUH': '紅磡' };
 
+let selectedMtrStations = ['TUM', 'SIH', 'TWW'];
 let savedMtrStations = JSON.parse(localStorage.getItem('mtrStations'));
 if (savedMtrStations && savedMtrStations.length > 0 && savedMtrStations[0].includes('-')) {
     savedMtrStations = [...new Set(savedMtrStations.map(s => s.split('-')[1]))];
     localStorage.setItem('mtrStations', JSON.stringify(savedMtrStations));
 }
-let selectedMtrStations = (savedMtrStations && savedMtrStations.length > 0) ? savedMtrStations : ['TUM', 'SIH', 'TWW'];
+if (savedMtrStations && Array.isArray(savedMtrStations)) {
+    let validStations = savedMtrStations.filter(id => MTR_STA_DICT[id]);
+    if (validStations.length > 0) selectedMtrStations = validStations;
+}
+if (selectedMtrStations.length === 0) {
+    selectedMtrStations = ['TUM', 'SIH', 'TWW'];
+}
 let currentMtrStationId = selectedMtrStations[0];
 
-// ================= 九巴/小巴/城巴/港鐵巴士資料區 =================
-let kmbStopsDict = {}; 
-let gmbStopsDict = {}; 
-let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
-let kmbRoutesList = []; 
+// ================= 天氣地區設定 =================
+const WEATHER_REGIONS = ['屯門', '香港', '元朗', '天水圍', '將軍澳', '沙田', '大埔', '荃灣', '青衣', '東涌', '赤鱲角', '黃大仙', '觀塘', '尖沙咀', '中環', '灣仔', '銅鑼灣', '北角', '柴灣', '筲箕灣', '薄扶林', '赤柱', '西貢', '上水', '粉嶺', '打鼓嶺', '流浮山', '石崗', '長洲', '坪洲', '南丫島', '大嶼山'];
+let weatherRegion = localStorage.getItem('weatherRegion') || '屯門';
+if (!WEATHER_REGIONS.includes(weatherRegion)) {
+    weatherRegion = '屯門';
+    localStorage.setItem('weatherRegion', weatherRegion);
+}
 
-// 城巴／港鐵巴士專用
+function getWeatherRegion() {
+    return weatherRegion;
+}
+
+function setWeatherRegion(region) {
+    if (WEATHER_REGIONS.includes(region)) {
+        weatherRegion = region;
+        localStorage.setItem('weatherRegion', region);
+        fetchWeather();
+        return true;
+    }
+    return false;
+}
+
+// ================= 九巴/小巴/城巴/港鐵巴士資料區 =================
+let kmbStopsDict = {};
+let gmbStopsDict = {};
+let kmbSelected = JSON.parse(localStorage.getItem('kmbStations')) || [];
+let kmbRoutesList = [];
 let ctbStopCache = new Map();
 let mtrBusStops = [];
 let mtrBusRoutes = {};
 
 // ================= API 數據獲取與處理邏輯 =================
 async function fetchWeather() {
-   const now = new Date();
-    document.getElementById('weather-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    document.getElementById('weather-refresh-time').innerText = timeStr;
+    console.log('🔄 fetchWeather 開始執行，地區:', weatherRegion);
+
+    // 更新左上角地點名稱
+    document.getElementById('weather-location').innerText = weatherRegion;
+
+    // 設定初始值
+    document.getElementById('weather-temp').innerText = '--';
+    document.getElementById('weather-details').innerHTML = '<div>濕度 --%</div>';
+    document.getElementById('weather-desc').innerText = '載入天氣資料...';
+    document.getElementById('weather-forecast').innerText = '載入中...';
+    document.getElementById('weather-outlook').innerText = '載入中...';
+    document.getElementById('weather-min-max').innerText = ' --°C / --°C';
+
     try {
+        // ----- 1. 即時天氣 (rhrread) -----
         const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+        if (!res.ok) throw new Error(`rhrread HTTP ${res.status}`);
         const data = await res.json();
-        const tmTemp = data.temperature.data.find(d => d.place === '屯門');
-        if (tmTemp) document.getElementById('weather-temp').innerText = tmTemp.value;
-        
-        let detailsHTML = '';
-        if (data.humidity && data.humidity.data[0]) detailsHTML += `<div>濕度 ${data.humidity.data[0].value}%</div>`;
-        if (data.rainfall && data.rainfall.data) {
-            const tmRain = data.rainfall.data.find(d => d.place === '屯門');
-            if (tmRain && tmRain.max > 0) detailsHTML += `<div>降雨 ${tmRain.max}mm</div>`;
+
+        // 溫度
+        let tempValue = '--';
+        if (data.temperature && Array.isArray(data.temperature.data)) {
+            const target = data.temperature.data.find(d => d.place === weatherRegion);
+            if (target && target.value !== undefined) {
+                tempValue = target.value;
+            } else {
+                console.warn(`⚠️ 找不到「${weatherRegion}」溫度，使用第一個站點`);
+                if (data.temperature.data.length > 0) tempValue = data.temperature.data[0].value;
+            }
         }
-        if (data.uvindex && data.uvindex.data && data.uvindex.data.length > 0) detailsHTML += `<div>UV ${data.uvindex.data[0].value}</div>`;
+        document.getElementById('weather-temp').innerText = tempValue;
+
+        // 濕度、降雨、UV
+        let detailsHTML = '';
+        if (data.humidity && data.humidity.data && data.humidity.data[0]) {
+            detailsHTML += `<div>濕度 ${data.humidity.data[0].value}%</div>`;
+        }
+        if (data.rainfall && data.rainfall.data) {
+            const targetRain = data.rainfall.data.find(d => d.place === weatherRegion);
+            if (targetRain && targetRain.max > 0) {
+                detailsHTML += `<div>降雨 ${targetRain.max}mm</div>`;
+            }
+        }
+        if (data.uvindex && data.uvindex.data && data.uvindex.data.length > 0) {
+            detailsHTML += `<div>UV ${data.uvindex.data[0].value}</div>`;
+        }
         document.getElementById('weather-details').innerHTML = detailsHTML || '<div>-</div>';
 
+        // ----- 2. 天氣警告 (warnsum) 顯示 type + name -----
         const warnRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
-        const warnData = await warnRes.json();
-        const warnIcon = document.getElementById('weather-warning-icon');
-        const warnModalText = document.getElementById('warning-modal-text');
-        
-        if (Object.keys(warnData).length > 0) {
-            warnIcon.classList.remove('hidden');
-            let warnings = [];
-            for (let key in warnData) { warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${warnData[key].name}</div>`); }
-            warnModalText.innerHTML = warnings.join('');
-        } else {
-            warnIcon.classList.add('hidden');
-            warnModalText.innerHTML = '<div class="text-gray-400 text-center py-6">目前沒有生效的天氣警告</div>';
+        if (warnRes.ok) {
+            const warnData = await warnRes.json();
+            const warnIcon = document.getElementById('weather-warning-icon');
+            const warnModalText = document.getElementById('warning-modal-text');
+
+            if (Object.keys(warnData).length > 0) {
+                warnIcon.classList.remove('hidden');
+                let warnings = [];
+                for (let key in warnData) {
+                    const warningType = warnData[key].type || '';
+                    const warningName = warnData[key].name || key;
+                    const displayName = warningType ? `${warningType}（${warningName}）` : warningName;
+                    warnings.push(`<div class="bg-[#ff453a]/10 border border-[#ff453a]/30 p-3 rounded-xl text-[#ff453a] font-bold text-sm mb-2 shadow-inner">・${displayName}</div>`);
+                }
+                warnModalText.innerHTML = warnings.join('');
+            } else {
+                warnIcon.classList.add('hidden');
+                warnModalText.innerHTML = '<div class="text-gray-400 text-center py-6">目前沒有生效的天氣警告</div>';
+            }
         }
 
+        // ----- 3. 天氣預測 (flw) -----
         const flwRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc');
-        const flwData = await flwRes.json();
-        if (flwData.generalSituation) document.getElementById('weather-desc').innerText = flwData.generalSituation;
-        if (flwData.forecastDesc) document.getElementById('weather-forecast').innerText = flwData.forecastDesc;
-
-        const fndRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
-        const fndData = await fndRes.json();
-        if (fndData.generalSituation) document.getElementById('weather-outlook').innerText = fndData.generalSituation;
-        if (fndData.weatherForecast && fndData.weatherForecast.length > 0) {
-            const today = fndData.weatherForecast[0];
-            const minTemp = today.forecastMintemp.value;
-            const maxTemp = today.forecastMaxtemp.value;
-            document.getElementById('weather-min-max').innerText = ` ${minTemp}°C /  ${maxTemp}°C`;
+        if (flwRes.ok) {
+            const flwData = await flwRes.json();
+            // 現時天氣：forecastDesc
+            if (flwData.forecastDesc) {
+                document.getElementById('weather-desc').innerText = flwData.forecastDesc;
+            } else {
+                document.getElementById('weather-desc').innerText = '未能獲取天氣描述';
+            }
+            // 明日預測：outlook
+            if (flwData.outlook) {
+                document.getElementById('weather-forecast').innerText = flwData.outlook;
+            }
         }
-        
-    } catch (err) { console.error("天氣 API 錯誤", err); }
+
+        // ----- 4. 九天天氣展望 (fnd) -----
+        const fndRes = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc');
+        if (fndRes.ok) {
+            const fndData = await fndRes.json();
+            // 九天天氣展望：generalSituation
+            if (fndData.generalSituation) {
+                document.getElementById('weather-outlook').innerText = fndData.generalSituation;
+            }
+            // 今日溫度範圍
+            if (fndData.weatherForecast && fndData.weatherForecast.length > 0) {
+                const today = fndData.weatherForecast[0];
+                const minTemp = today.forecastMintemp?.value || '--';
+                const maxTemp = today.forecastMaxtemp?.value || '--';
+                document.getElementById('weather-min-max').innerText = ` ${minTemp}°C /  ${maxTemp}°C`;
+            }
+        }
+
+        console.log('✅ fetchWeather 完成');
+    } catch (err) {
+        console.error('❌ 天氣 API 錯誤:', err);
+        document.getElementById('weather-desc').innerText = '天氣資料暫時未能載入，請稍後重試';
+        document.getElementById('weather-forecast').innerText = '請檢查網絡連線';
+    }
 }
 
 async function fetchTrafficNews() {
@@ -136,22 +227,16 @@ async function fetchTrafficNews() {
     if (trafficTimeEl) {
         trafficTimeEl.innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     }
-
     try {
         const res = await fetch('https://resource.data.one.gov.hk/td/en/specialtrafficnews.xml?t=' + new Date().getTime());
         const text = await res.text();
-        
         const parser = new DOMParser();
         const xml = parser.parseFromString(text, 'text/xml');
-        const messages = xml.getElementsByTagName('message'); 
-        
-        let fullText = "";
-        let previewText = "";
-        
+        const messages = xml.getElementsByTagName('message');
+        let fullText = "", previewText = "";
         if (messages.length > 0) {
             const firstChinText = messages[0].getElementsByTagName("ChinText")[0]?.textContent || "";
             previewText = firstChinText.trim();
-            
             for (let i = 0; i < messages.length; i++) {
                 const chinText = messages[i].getElementsByTagName("ChinText")[0]?.textContent || "";
                 const refDate = messages[i].getElementsByTagName("ReferenceDate")[0]?.textContent || "";
@@ -160,20 +245,15 @@ async function fetchTrafficNews() {
                 }
             }
         }
-        
         if (!fullText) {
             fullText = "✅ 目前交通大致正常，沒有特別消息。";
             previewText = "✅ 目前交通大致正常，沒有特別消息。";
         }
-        
         fullTrafficText = fullText.trim();
-        const previewEl = document.getElementById('traffic-news-preview');
+        document.getElementById('traffic-news-preview').innerText = previewText;
+        document.getElementById('traffic-modal-text').innerText = fullTrafficText;
         const readMoreEl = document.getElementById('traffic-read-more');
         const readMoreTextEl = document.getElementById('traffic-read-more-text');
-        
-        previewEl.innerText = previewText;
-        document.getElementById('traffic-modal-text').innerText = fullTrafficText;
-        
         if (messages.length > 1 || previewText.length > 50) {
             readMoreEl.style.display = 'block';
             if (readMoreTextEl && messages.length > 1) {
@@ -207,26 +287,21 @@ function renderLrtTags() {
 }
 
 async function fetchLRTData() {
-    if(!currentStationId) return;
+    if (!currentStationId) return;
     document.getElementById('lrt-current-station-name').innerText = `${STATION_DICT[currentStationId] || '未知'}站`;
     const container = document.getElementById('lrt-platforms-container');
-    
     const now = new Date();
     document.getElementById('lrt-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
     container.classList.add('opacity-50', 'transition-opacity');
-
     try {
         const res = await fetch(`https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${currentStationId}`);
         const data = await res.json();
-        container.innerHTML = ''; 
-
+        container.innerHTML = '';
         if (data.status !== 1 || !data.platform_list || data.platform_list.length === 0) {
             container.innerHTML = '<div class="text-xs text-red-400 col-span-2 py-2 text-center">目前沒有班次資料或暫停服務。</div>';
             container.classList.remove('opacity-50');
             return;
         }
-
         data.platform_list.forEach(platform => {
             let platformHtml = `
             <div class="bg-white dark:bg-[#1c1c1e] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
@@ -236,36 +311,31 @@ async function fetchLRTData() {
                 </div>
                 <div class="p-2 space-y-2 flex-grow">
             `;
-
             if (!platform.route_list || platform.route_list.length === 0) {
                 platformHtml += `<div class="text-[10px] text-gray-500 text-center py-2">暫無班次</div>`;
             } else {
                 platform.route_list.forEach((route, index) => {
                     let trainEmoji = route.train_length == 1 ? '🚃' : (route.train_length == 2 ? '🚃🚃' : '');
                     const trainBadgeHtml = trainEmoji ? `<span class="ml-1 text-[13px]">${trainEmoji}</span>` : '';
-                    
                     let timeText = route.time_ch;
                     let exactTime = '--:--';
                     let minsVal = 999;
-
                     if (!timeText || timeText === '-' || timeText.includes('離開') || timeText.includes('即將抵達')) {
                         timeText = '即將抵達';
                         minsVal = 0;
                         const nowTime = new Date();
-                        exactTime = `${String(nowTime.getHours()).padStart(2,'0')}:${String(nowTime.getMinutes()).padStart(2,'0')}`;
+                        exactTime = `${String(nowTime.getHours()).padStart(2, '0')}:${String(nowTime.getMinutes()).padStart(2, '0')}`;
                     } else {
                         const match = timeText.match(/(\d+)/);
                         if (match) {
                             minsVal = parseInt(match[1], 10);
                             timeText = `${minsVal} 分鐘`;
                             const futureTime = new Date(new Date().getTime() + minsVal * 60000);
-                            exactTime = `${String(futureTime.getHours()).padStart(2,'0')}:${String(futureTime.getMinutes()).padStart(2,'0')}`;
+                            exactTime = `${String(futureTime.getHours()).padStart(2, '0')}:${String(futureTime.getMinutes()).padStart(2, '0')}`;
                         }
                     }
-
                     const timeClass = (minsVal <= 2) ? 'text-[#ff453a]' : 'text-blue-600 dark:text-[#64d2ff]';
                     const borderTopClass = index > 0 ? 'border-t border-gray-200 dark:border-gray-800 pt-2 mt-2' : '';
-
                     platformHtml += `
                     <div class="flex justify-between items-end ${borderTopClass}">
                         <div class="flex-1">
@@ -283,7 +353,7 @@ async function fetchLRTData() {
             container.innerHTML += platformHtml;
         });
         container.classList.remove('opacity-50');
-    } catch (err) { 
+    } catch (err) {
         container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center">無法連接網絡，請稍後再試。</div>';
         container.classList.remove('opacity-50');
     }
@@ -292,7 +362,7 @@ async function fetchLRTData() {
 function renderSortList() {
     const list = document.getElementById('selected-sort-list');
     list.innerHTML = '';
-    if(selectedStations.length === 0) {
+    if (selectedStations.length === 0) {
         list.innerHTML = '<span class="text-xs text-gray-500 my-auto ml-2">尚未選擇車站</span>';
         document.getElementById('selected-count').innerText = 0;
         return;
@@ -320,7 +390,7 @@ function moveSort(index, direction) {
 }
 
 function toggleStationSelection(id, isChecked) {
-    if (isChecked) { if (!selectedStations.includes(id)) selectedStations.push(id); } 
+    if (isChecked) { if (!selectedStations.includes(id)) selectedStations.push(id); }
     else { selectedStations = selectedStations.filter(s => s !== id); }
     renderSortList();
 }
@@ -330,14 +400,14 @@ function filterStations() {
     document.querySelectorAll('.group-container').forEach(group => {
         let hasVisible = false;
         group.querySelectorAll('.station-item').forEach(item => {
-            if (item.getAttribute('data-name').includes(query) || item.getAttribute('data-id').includes(query)) { item.style.display = 'flex'; hasVisible = true; } 
+            if (item.getAttribute('data-name').includes(query) || item.getAttribute('data-id').includes(query)) { item.style.display = 'flex'; hasVisible = true; }
             else { item.style.display = 'none'; }
         });
         group.style.display = hasVisible ? 'block' : 'none';
     });
 }
 
-// ================= 港鐵邏輯 (修復版) =================
+// ================= 港鐵邏輯 =================
 function renderMtrTags() {
     const container = document.getElementById('mtr-tags-container');
     container.innerHTML = '';
@@ -353,17 +423,14 @@ function renderMtrTags() {
 }
 
 async function fetchMTRData() {
-    if(!currentMtrStationId) return;
+    if (!currentMtrStationId) return;
     document.getElementById('mtr-current-station-name').innerText = `${MTR_STA_DICT[currentMtrStationId] || '未知'}站`;
     const container = document.getElementById('mtr-platforms-container');
     const now = new Date();
     document.getElementById('mtr-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
     const lines = MTR_STA_LINES[currentMtrStationId];
-    if(!lines) return;
-
+    if (!lines) return;
     container.classList.add('opacity-50', 'transition-opacity');
-
     try {
         let allData = [];
         await Promise.all(lines.map(async (line) => {
@@ -373,36 +440,27 @@ async function fetchMTRData() {
                 if (data.status === 1 && data.data && data.data[`${line}-${currentMtrStationId}`]) {
                     allData.push({ line, data: data.data[`${line}-${currentMtrStationId}`] });
                 }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }));
-
         if (allData.length === 0) {
             container.innerHTML = '<div class="text-xs text-red-400 col-span-2 py-4 text-center">目前沒有班次資料或暫停服務。</div>';
             container.classList.remove('opacity-50');
             return;
         }
-
         allData.sort((a, b) => lines.indexOf(a.line) - lines.indexOf(b.line));
-
         let html = '';
-        allData.forEach(({line, data}) => {
+        allData.forEach(({ line, data }) => {
             const lineInfo = MTR_LINES[line];
             const directions = ['UP', 'DOWN'];
             directions.forEach(dir => {
                 if (data[dir] && data[dir].length > 0) {
                     const trains = data[dir];
                     const plat = trains[0].plat;
-                    
-                    // ⭐ 過濾掉不合理的班次（超過 30 分鐘視為已停駛）
                     const validTrains = trains.filter(route => {
                         const minsVal = parseInt(route.ttnt, 10);
-                        // 如果 ttnt 是數字且大於 30，視為無效（尾班車已過）
-                        // 如果 ttnt 是 "0" 或空字串，保留（即將抵達）
                         if (!isNaN(minsVal) && minsVal > 30) return false;
                         return true;
                     });
-
-                    // 如果沒有有效班次，顯示「暫停服務」
                     if (validTrains.length === 0) {
                         let platformHtml = `
                         <div class="bg-white dark:bg-[#1c1c1e] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
@@ -420,8 +478,6 @@ async function fetchMTRData() {
                         html += platformHtml;
                         return;
                     }
-
-                    // 原有的顯示邏輯，但使用過濾後的 validTrains
                     let platformHtml = `
                     <div class="bg-white dark:bg-[#1c1c1e] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
                         <div class="p-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-800" style="background-color: ${lineInfo.color}15;">
@@ -433,19 +489,15 @@ async function fetchMTRData() {
                         </div>
                         <div class="p-2 space-y-2 flex-grow">
                     `;
-
                     validTrains.slice(0, 3).forEach((route, index) => {
                         let minsVal = parseInt(route.ttnt, 10);
                         const isArriving = isNaN(minsVal) || minsVal === 0 || route.ttnt === "" || route.ttnt === null;
-                        
-                        const timeValueStr = isArriving 
-                            ? `<span class="text-[#ff453a] font-black text-[20px] tracking-tighter">即將抵達</span>` 
+                        const timeValueStr = isArriving
+                            ? `<span class="text-[#ff453a] font-black text-[20px] tracking-tighter">即將抵達</span>`
                             : `<span class="text-[#ff453a] font-black text-[20px]">${minsVal}</span><span class="text-gray-500 dark:text-gray-400 font-bold text-[11px] ml-0.5">分鐘</span>`;
-                            
                         const borderTopClass = index > 0 ? 'border-t border-gray-100 dark:border-gray-800 pt-2 mt-2' : '';
-                        const destName = MTR_DEST_DICT[route.dest] || route.dest;
+                        const destName = MTR_STA_DICT[route.dest] || route.dest;
                         const exactTime = route.time.substring(11, 16);
-
                         platformHtml += `
                         <div class="flex justify-between items-end ${borderTopClass}">
                             <div class="flex-1 truncate pr-1">
@@ -465,14 +517,13 @@ async function fetchMTRData() {
         });
         container.innerHTML = html;
         container.classList.remove('opacity-50');
-    } catch (err) { 
+    } catch (err) {
         container.innerHTML = '<div class="text-xs text-red-400 col-span-2 text-center py-4">無法連接網絡，請稍後再試。</div>';
         container.classList.remove('opacity-50');
     }
 }
 
 // ================= 九巴/小巴/城巴/港鐵巴士邏輯 =================
-// ---- 載入港鐵巴士本地 JSON ----
 async function loadMtrBusData() {
     try {
         const [stopsRes, routesRes] = await Promise.all([
@@ -484,7 +535,6 @@ async function loadMtrBusData() {
         console.log('✅ 港鐵巴士本地資料載入成功');
         return;
     } catch (e) { /* 本地失敗，嘗試遠端 */ }
-
     try {
         const [stopsRes, routesRes] = await Promise.all([
             fetch('https://jasonunicorn629-source.github.io/mtr-bus-eta/data/stops.json'),
@@ -498,7 +548,6 @@ async function loadMtrBusData() {
     }
 }
 
-// ---- 城巴站名快取 ----
 async function getCtbStopName(stopId) {
     if (ctbStopCache.has(stopId)) return ctbStopCache.get(stopId);
     try {
@@ -514,9 +563,8 @@ async function getCtbStopName(stopId) {
     }
 }
 
-// ---- 九巴搜尋 ----
 async function fetchAllKmbStops() {
-    if(Object.keys(kmbStopsDict).length > 0) return;
+    if (Object.keys(kmbStopsDict).length > 0) return;
     try {
         const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
         const data = await res.json();
@@ -537,19 +585,17 @@ async function fetchAllKmbRoutes() {
 
 async function searchKmbRoute() {
     const routeInput = document.getElementById('kmb-route-input').value.trim().toUpperCase();
-    if(!routeInput) return;
-    
+    if (!routeInput) return;
     const statusEl = document.getElementById('kmb-search-status');
     const container = document.getElementById('kmb-route-results');
     container.innerHTML = '';
     statusEl.innerText = '正在搜尋九巴...';
     statusEl.className = "text-center text-[#ff453a] font-bold text-xs mb-2";
-
     try {
-        await fetchAllKmbStops(); 
+        await fetchAllKmbStops();
         await fetchAllKmbRoutes();
         const matchedRoutes = kmbRoutesList.filter(r => r.route === routeInput);
-        if(matchedRoutes.length > 0) {
+        if (matchedRoutes.length > 0) {
             await renderKmbSearchResults(matchedRoutes, routeInput, container);
             statusEl.innerText = '搜尋完成！';
         } else {
@@ -566,12 +612,9 @@ async function renderKmbSearchResults(routes, routeCode, container) {
         const dest = r.dest_tc;
         const orig = r.orig_tc;
         const dirParam = r.bound.toLowerCase() === 'i' ? 'inbound' : 'outbound';
-
         const stopRes = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${routeCode}/${dirParam}/${r.service_type}`);
         const stopData = await stopRes.json();
-
         if (!stopData.data || stopData.data.length === 0) continue;
-
         let html = `
         <div class="mt-4 bg-red-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-red-200 dark:border-red-500/30">
             <h4 class="text-[#ff453a] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
@@ -579,12 +622,10 @@ async function renderKmbSearchResults(routes, routeCode, container) {
             </h4>
             <div class="space-y-2">
         `;
-
         stopData.data.forEach(stopObj => {
             const stopName = kmbStopsDict[stopObj.stop] || stopObj.stop;
             const idStr = `${routeCode}_${r.bound}_${r.service_type}_${stopObj.stop}`;
             const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
-
             const itemData = encodeURIComponent(JSON.stringify({
                 id: idStr,
                 company: 'kmb',
@@ -595,7 +636,6 @@ async function renderKmbSearchResults(routes, routeCode, container) {
                 stopName: stopName,
                 dest: dest
             }));
-
             html += `
                 <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
                     <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
@@ -611,7 +651,6 @@ async function renderKmbSearchResults(routes, routeCode, container) {
     }
 }
 
-// ---- 城巴搜尋 ----
 async function searchCtbRoute() {
     const routeInput = document.getElementById('ctb-route-input').value.trim().toUpperCase();
     if (!routeInput) return;
@@ -620,7 +659,6 @@ async function searchCtbRoute() {
     container.innerHTML = '';
     statusEl.innerText = '正在搜尋城巴...';
     statusEl.className = 'text-center text-[#0033a0] font-bold text-xs mb-2';
-
     try {
         const [dataO, dataI] = await Promise.all([
             fetch(`https://rt.data.gov.hk/v2/transport/citybus/route-stop/CTB/${routeInput}/outbound`).then(r => r.json()),
@@ -631,10 +669,8 @@ async function searchCtbRoute() {
             ...(dataI.data || []).map(s => ({ ...s, dir: 'I' }))
         ];
         if (allStops.length === 0) throw new Error('找不到該城巴路線資料');
-
         const stopIds = [...new Set(allStops.map(s => s.stop))];
         await Promise.all(stopIds.map(id => getCtbStopName(id)));
-
         const groups = {};
         allStops.forEach(s => {
             const key = s.dir === 'O' ? 'outbound' : 'inbound';
@@ -647,7 +683,6 @@ async function searchCtbRoute() {
                 dest_tc: s.dest_tc
             });
         });
-
         for (const [dir, stops] of Object.entries(groups)) {
             if (stops.length === 0) continue;
             const apiDest = stops[0]?.dest_tc;
@@ -655,7 +690,6 @@ async function searchCtbRoute() {
             const finalDest = (apiDest && !['去程', '回程'].includes(apiDest)) ? apiDest : lastStopName;
             stops.forEach(s => s.dest = finalDest);
         }
-
         renderCtbSearchResults(groups, routeInput, container);
         statusEl.innerText = '搜尋完成！';
     } catch (e) {
@@ -703,7 +737,6 @@ function renderCtbSearchResults(groups, routeCode, container) {
     }
 }
 
-// ---- 港鐵巴士搜尋 ----
 async function searchMtrBusRoute() {
     const routeInput = document.getElementById('mtrbus-route-input').value.trim().toUpperCase();
     if (!routeInput) return;
@@ -712,7 +745,6 @@ async function searchMtrBusRoute() {
     container.innerHTML = '';
     statusEl.innerText = '正在搜尋港鐵巴士...';
     statusEl.className = 'text-center text-[#007078] font-bold text-xs mb-2';
-
     if (mtrBusStops.length === 0 || Object.keys(mtrBusRoutes).length === 0) {
         await loadMtrBusData();
     }
@@ -720,7 +752,6 @@ async function searchMtrBusRoute() {
         statusEl.innerText = '無法載入港鐵巴士站點資料';
         return;
     }
-
     const routeStopsMap = new Map();
     for (const [key, routeArr] of Object.entries(mtrBusRoutes)) {
         const parts = key.split('-');
@@ -739,17 +770,14 @@ async function searchMtrBusRoute() {
             });
         }
     }
-
     if (routeStopsMap.size === 0) {
         statusEl.innerText = `找不到港鐵巴士路線 (${routeInput})`;
         return;
     }
-
     const groups = { outbound: [], inbound: [] };
     for (const stop of routeStopsMap.values()) {
         groups[stop.dir].push(stop);
     }
-
     for (const dir of ['outbound', 'inbound']) {
         const stops = groups[dir];
         if (stops.length === 0) continue;
@@ -761,7 +789,6 @@ async function searchMtrBusRoute() {
         const terminus = stops[stops.length - 1].stopName;
         stops.forEach(s => s.dest = terminus);
     }
-
     renderMtrBusSearchResults(groups, routeInput, container);
     statusEl.innerText = '搜尋完成！';
 }
@@ -793,7 +820,7 @@ function renderMtrBusSearchResults(groups, routeCode, container) {
             html += `
                 <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
                     <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
-                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${idx+1}</span>
+                        <span class="bg-gray-200 dark:bg-gray-700 text-[9px] w-4 h-4 flex items-center justify-center rounded-full flex-shrink-0 text-gray-700 dark:text-gray-300 font-bold">${idx + 1}</span>
                         ${stop.stopName}
                     </span>
                     <input type="checkbox" value="${itemData}" class="w-4 h-4 accent-[#007078] rounded flex-shrink-0" onchange="toggleBusSelection(this)" ${isChecked}>
@@ -805,34 +832,28 @@ function renderMtrBusSearchResults(groups, routeCode, container) {
     }
 }
 
-// ---- 專線小巴搜尋 ----
 async function searchGmbRoute() {
     const routeInput = document.getElementById('gmb-route-input').value.trim().toUpperCase();
-    if(!routeInput) return;
-    
+    if (!routeInput) return;
     const statusEl = document.getElementById('kmb-search-status');
     const container = document.getElementById('kmb-route-results');
     container.innerHTML = '';
     statusEl.innerText = '正在搜尋小巴...';
     statusEl.className = "text-center text-[#34c759] font-bold text-xs mb-2";
-
     let foundGmb = false;
     const regions = ['NT', 'KLN', 'HKI'];
-    
     for (const region of regions) {
         try {
             const mbRes = await fetch(`https://data.etagmb.gov.hk/route/${region}/${routeInput}`);
             if (!mbRes.ok) continue;
             const mbData = await mbRes.json();
-            
             if (mbData.data && mbData.data.length > 0) {
                 foundGmb = true;
                 await renderGmbSearchResults(mbData.data, routeInput, container);
             }
-        } catch(e) { console.error("GMB Search Error:", e); }
+        } catch (e) { console.error("GMB Search Error:", e); }
     }
-
-    if(foundGmb) {
+    if (foundGmb) {
         statusEl.innerText = '搜尋完成！';
     } else {
         statusEl.innerText = `找不到小巴路線 (${routeInput})`;
@@ -842,31 +863,25 @@ async function searchGmbRoute() {
 async function renderGmbSearchResults(routes, routeCode, container) {
     for (const r of routes) {
         const routeId = r.route_id;
-        
         let directions = r.directions;
         if (!directions) {
             try {
                 const detailRes = await fetch(`https://data.etagmb.gov.hk/route/${routeId}`);
                 const detailData = await detailRes.json();
                 if (detailData.data && detailData.data.directions) directions = detailData.data.directions;
-            } catch(e) {}
+            } catch (e) {}
         }
         if (!directions) continue;
-
         for (const dir of directions) {
             const seq = dir.route_seq;
             const dest = dir.dest_tc;
             const orig = dir.orig_tc;
-            
             try {
                 const stopRes = await fetch(`https://data.etagmb.gov.hk/route-stop/${routeId}/${seq}`);
                 const stopData = await stopRes.json();
-                
-                let stops = stopData.data.route_stops || stopData.data; 
+                let stops = stopData.data.route_stops || stopData.data;
                 if (!stops || stops.length === 0) continue;
-
                 const uniqueId = `gmb-stops-${routeId}-${seq}`;
-                
                 let baseHtml = `
                 <div class="mt-4 bg-green-50 dark:bg-[#1c2a3d]/30 p-3 rounded-xl border border-green-200 dark:border-[#34c759]/40 relative">
                     <h4 class="text-[#34c759] font-bold text-sm mb-3 pb-2 border-b border-gray-200 dark:border-gray-700/60 flex items-center gap-2">
@@ -878,13 +893,10 @@ async function renderGmbSearchResults(routes, routeCode, container) {
                 </div>
                 `;
                 container.insertAdjacentHTML('beforeend', baseHtml);
-
                 const stopsContainer = document.getElementById(uniqueId);
                 let stopsHtml = '';
-
                 for (const stopObj of stops) {
                     let stopName = gmbStopsDict[stopObj.stop_id];
-                    
                     if (!stopName) {
                         if (stopObj.name_tc) {
                             stopName = stopObj.name_tc;
@@ -902,13 +914,11 @@ async function renderGmbSearchResults(routes, routeCode, container) {
                                 } else {
                                     stopName = `車站 ${stopObj.stop_id}`;
                                 }
-                            } catch(e) { stopName = `車站 ${stopObj.stop_id}`; }
+                            } catch (e) { stopName = `車站 ${stopObj.stop_id}`; }
                         }
                     }
-
                     const idStr = `gmb_${routeId}_${seq}_${stopObj.stop_id}`;
                     const isChecked = kmbSelected.some(s => s.id === idStr) ? 'checked' : '';
-
                     const itemData = encodeURIComponent(JSON.stringify({
                         id: idStr,
                         company: 'gmb',
@@ -919,7 +929,6 @@ async function renderGmbSearchResults(routes, routeCode, container) {
                         stopName: stopName,
                         dest: dest
                     }));
-
                     stopsHtml += `
                         <label class="flex items-center justify-between p-2 bg-white dark:bg-[#2c2c2e] rounded-lg border border-gray-200 dark:border-gray-700 active:bg-gray-100 dark:active:bg-[#3a3a3c] transition-colors cursor-pointer">
                             <span class="text-xs text-gray-800 dark:text-gray-200 truncate pr-2 flex items-center gap-2">
@@ -930,15 +939,12 @@ async function renderGmbSearchResults(routes, routeCode, container) {
                         </label>
                     `;
                 }
-                
-                if(stopsContainer) stopsContainer.innerHTML = stopsHtml;
-
-            } catch(e) {}
+                if (stopsContainer) stopsContainer.innerHTML = stopsHtml;
+            } catch (e) {}
         }
     }
 }
 
-// ---- 通用選取與排序 ----
 function toggleBusSelection(checkbox) {
     const data = JSON.parse(decodeURIComponent(checkbox.value));
     if (checkbox.checked) {
@@ -952,7 +958,7 @@ function toggleBusSelection(checkbox) {
 function renderKmbSortList() {
     const list = document.getElementById('kmb-selected-sort-list');
     list.innerHTML = '';
-    if(kmbSelected.length === 0) {
+    if (kmbSelected.length === 0) {
         list.innerHTML = '<span class="text-xs text-gray-500 my-auto ml-2">尚未選擇站點</span>';
         document.getElementById('kmb-selected-count').innerText = 0;
         return;
@@ -966,7 +972,6 @@ function renderKmbSortList() {
         if (isGmb) { badgeBorder = 'border-green-200 dark:border-[#34c759]/40'; routeColor = 'text-[#34c759]'; }
         else if (isCtb) { badgeBorder = 'border-blue-200 dark:border-blue-500/30'; routeColor = 'text-[#0033a0]'; }
         else if (isMtrBus) { badgeBorder = 'border-teal-200 dark:border-teal-500/30'; routeColor = 'text-[#007078]'; }
-
         list.innerHTML += `
             <div class="flex items-center gap-1.5 bg-white dark:bg-[#1c2a3d] border ${badgeBorder} px-2 py-1 rounded-lg shadow-sm">
                 <div class="flex flex-col">
@@ -991,14 +996,12 @@ function moveKmbSort(index, direction) {
     renderKmbSortList();
 }
 
-// ---- 卡片建構 (含 ETA) ----
 async function buildBusCardHtml(item) {
     try {
         let etas = [];
         const isGmb = item.company === 'gmb';
         const isCtb = item.company === 'ctb';
         const isMtrBus = item.company === 'mtrbus';
-
         if (isGmb) {
             try {
                 const res = await fetch(`https://data.etagmb.gov.hk/eta/stop/${item.stopId}`);
@@ -1071,7 +1074,6 @@ async function buildBusCardHtml(item) {
                                 .filter(t => t !== null && t >= 0 && t <= 7200)
                                 .sort((a, b) => a - b)
                                 .slice(0, 2);
-
                             etas = times.map(sec => {
                                 if (sec < 30) return { text: '即將到站', mins: 0 };
                                 const mins = Math.round(sec / 60);
@@ -1102,17 +1104,13 @@ async function buildBusCardHtml(item) {
                 etas = [];
             }
         }
-
         if (!Array.isArray(etas)) etas = [];
         etas = etas.filter(e => e !== null && e !== undefined);
-
         let eta1 = etas.length > 0 ? etas[0] : null;
         let eta2 = etas.length > 1 ? etas[1] : null;
-
         const borderColorClass = isGmb ? 'border-[#34c759]' : (isCtb ? 'border-[#f59e0b]' : (isMtrBus ? 'border-[#007078]' : 'border-[#ff453a]'));
         const textColorClass = isGmb ? 'text-[#34c759]' : (isCtb ? 'text-[#d97706]' : (isMtrBus ? 'text-[#007078]' : 'text-[#ff453a]'));
         const bgColorClass = isGmb ? 'bg-[#34c759]' : (isCtb ? 'bg-[#fbbf24]' : (isMtrBus ? 'bg-[#007078]' : 'bg-[#ff453a]'));
-
         const renderRow = (label, etaObj) => {
             if (!etaObj || (!etaObj.eta && !etaObj.text)) {
                 return `
@@ -1121,7 +1119,6 @@ async function buildBusCardHtml(item) {
                     <div class="text-gray-400 dark:text-gray-500 font-bold text-xs">沒有班次</div>
                 </div>`;
             }
-
             if (etaObj.text) {
                 const isTerminus = etaObj.text === '總站';
                 const cls = isTerminus ? 'text-gray-500 dark:text-gray-400' : textColorClass;
@@ -1149,7 +1146,6 @@ async function buildBusCardHtml(item) {
                     </div>
                 </div>`;
             }
-
             try {
                 const etaTime = new Date(etaObj.eta);
                 if (isNaN(etaTime.getTime())) {
@@ -1162,7 +1158,7 @@ async function buildBusCardHtml(item) {
                 const now = new Date();
                 const diffMs = etaTime - now;
                 let diffMins = Math.max(0, Math.floor(diffMs / 60000));
-                const timeStr = `${String(etaTime.getHours()).padStart(2,'0')}:${String(etaTime.getMinutes()).padStart(2,'0')}`;
+                const timeStr = `${String(etaTime.getHours()).padStart(2, '0')}:${String(etaTime.getMinutes()).padStart(2, '0')}`;
                 let minHtml = '';
                 if (diffMins <= 0) {
                     minHtml = `<span class="text-sm tracking-tight ${textColorClass}">即將抵達</span>`;
@@ -1185,7 +1181,6 @@ async function buildBusCardHtml(item) {
                 </div>`;
             }
         };
-
         return `
         <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-2.5 border border-gray-200 dark:border-gray-800 flex flex-col shadow-sm">
             <div class="flex gap-1.5 items-center mb-1 overflow-hidden">
@@ -1204,20 +1199,16 @@ async function buildBusCardHtml(item) {
     }
 }
 
-// ---- 取得並顯示所有已選站點 ----
 async function fetchKMBData() {
     const container = document.getElementById('kmb-container');
     const now = new Date();
     document.getElementById('kmb-refresh-time').innerText = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
     if (kmbSelected.length === 0) {
         container.innerHTML = '<div class="col-span-2 text-center py-6 text-gray-500 text-xs border border-gray-200 dark:border-gray-800 rounded-xl">請點擊 ⚙️ 設定加入巴士或小巴路線</div>';
         return;
     }
-
     container.classList.add('opacity-50', 'transition-opacity');
     container.innerHTML = kmbSelected.map((item, i) => `<div id="bus-card-${i}" class="bg-white dark:bg-[#1c1c1e] rounded-xl h-[135px] flex items-center justify-center border border-gray-200 dark:border-gray-800"><span class="text-xs text-gray-500 animate-pulse">載入中...</span></div>`).join('');
-
     kmbSelected.forEach(async (item, i) => {
         const html = await buildBusCardHtml(item);
         const card = document.getElementById(`bus-card-${i}`);
